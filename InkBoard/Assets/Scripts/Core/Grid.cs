@@ -17,15 +17,13 @@ public class MyGrid
             Cell cell = new Cell(x,y,z);
             m_Array[i] = cell;
         }
-
-        Debug.Log("Grid constructed with layout " + layout.ToString());
     }
 
     ~MyGrid()
     {
     }
 
-    public void DebugLog()
+    public virtual void DebugLog()
     {
         Debug.Log("******GRID DEBUG LOG******");
         Debug.Log("Layout: " + m_Layout.ToString());
@@ -56,7 +54,7 @@ public struct GridLayout
     }
     public override string ToString()
     {
-        return string.Format("XYZ layout {0} {1} {2}", xCount, yCount, zCount);
+        return string.Format("XYZ {0} {1} {2}", xCount, yCount, zCount);
     }
     public uint GetTotalCount() { return xCount * yCount * zCount; }
     public uint xCount;
