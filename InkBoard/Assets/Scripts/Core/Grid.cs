@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class MyGrid
@@ -22,7 +23,11 @@ public class MyGrid
     ~MyGrid()
     {
     }
-
+    public virtual void ForEach(Action<Cell> action)
+    {
+        for(uint i = 0; i < m_Array.Length; i++)
+            action(m_Array[i]);
+    }
     public virtual void DebugLog()
     {
         Debug.Log("******GRID DEBUG LOG******");
@@ -97,6 +102,8 @@ public class Cell
     ~Cell()
     {
     }
+    public Vector3Int GetGridPositionVec3() { return m_GridPosition; }
+    public GridPosition GetGridPosition() { return m_GridPosition; }
     public override string ToString()
     {
         return "Cell " + m_GridPosition.ToString();
