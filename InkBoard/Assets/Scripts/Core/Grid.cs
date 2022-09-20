@@ -1,12 +1,12 @@
 using System;
 using UnityEngine;
 
-public class MyGrid
+public class MyGrid<T> where T : class
 {
     public MyGrid(GridLayout layout)
     {
         m_Layout = layout;
-        m_Array = new Cell[layout.GetTotalCount()];
+        m_Array = new Cell<T>[layout.GetTotalCount()];
         for(uint i = 0; i < m_Layout.GetTotalCount(); i++)
         {
             uint z = i / (layout.yCount * layout.xCount);
@@ -15,7 +15,7 @@ public class MyGrid
             uint countInYDimension = y * layout.xCount;
             uint x = i - countInZDimension - countInYDimension;
 
-            Cell cell = new Cell(x,y,z);
+            Cell<T> cell = new Cell<T>(x,y,z);
             m_Array[i] = cell;
         }
     }
@@ -23,7 +23,7 @@ public class MyGrid
     ~MyGrid()
     {
     }
-    public virtual void ForEach(Action<Cell> action)
+    public virtual void ForEach(Action<Cell<T>> action)
     {
         for(uint i = 0; i < m_Array.Length; i++)
             action(m_Array[i]);
@@ -40,9 +40,9 @@ public class MyGrid
         }
         Debug.Log("Finished!");
     }
-    public Cell[] GetArray() { return m_Array; }
+    public Cell<T>[] GetArray() { return m_Array; }
     protected GridLayout m_Layout;
-    protected Cell[] m_Array;
+    protected Cell<T>[] m_Array;
 
 }
 
@@ -67,36 +67,42 @@ public struct GridLayout
     public uint zCount;
 }
 
-public class Cell
+public class Cell<T> where T : class
 {
-    public Cell()
+    public Cell(T value = null)
     {
         m_GridPosition = new GridPosition(0,0,0);
+        m_Value = value;
     }
-    public Cell(GridPosition gridPosition)
+    public Cell(GridPosition gridPosition, T value = null)
     {
         m_GridPosition = gridPosition;
+        m_Value = value;
     }
-    public Cell(uint x, uint y, uint z)
+    public Cell(uint x, uint y, uint z, T value = null)
     {
         m_GridPosition = new GridPosition(x,y,z);
+        m_Value = value;
     }
-    public Cell(uint x, uint y)
+    public Cell(uint x, uint y, T value = null)
     {
         m_GridPosition = new GridPosition(x, y);
+        m_Value = value;
     }
-    public Cell(Vector3Int vec3)
+    public Cell(Vector3Int vec3, T value = null)
     {
         uint x = vec3.x < 0 ? 0 : (uint)vec3.x;
         uint y = vec3.y < 0 ? 0 : (uint)vec3.y;
         uint z = vec3.z < 0 ? 0 : (uint)vec3.z;
         m_GridPosition = new GridPosition(x, y, z);
+        m_Value = value;
     }
-    public Cell(Vector2Int vec2)
+    public Cell(Vector2Int vec2, T value = null)
     {
         uint x = vec2.x < 0 ? 0 : (uint)vec2.x;
         uint y = vec2.y < 0 ? 0 : (uint)vec2.y;
         m_GridPosition = new GridPosition(x, y);
+        m_Value = value;
     }
 
     ~Cell()
@@ -104,11 +110,14 @@ public class Cell
     }
     public Vector3Int GetGridPositionVec3() { return m_GridPosition; }
     public GridPosition GetGridPosition() { return m_GridPosition; }
+    public T GetValue() { return m_Value; }
+    public void SetValue(T val) { m_Value = val; }
     public override string ToString()
     {
         return "Cell " + m_GridPosition.ToString();
     }
     protected GridPosition m_GridPosition;
+    protected T m_Value;
 }
 
 public struct GridPosition
