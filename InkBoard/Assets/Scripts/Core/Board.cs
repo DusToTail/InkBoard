@@ -31,7 +31,7 @@ public class Board : MonoBehaviour
         Vector3 localPosition = (Vector3)gridPosition * betweenDistance;
         var blockObj = Instantiate(defaultBlock, transform.position + localPosition, Quaternion.identity, transform);
         var block = blockObj.GetComponent<Block>();
-        block.Init(cell);
+        block.Init();
         cell.SetValue(block);
     }
 

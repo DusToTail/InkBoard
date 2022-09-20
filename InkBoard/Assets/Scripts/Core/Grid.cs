@@ -41,6 +41,20 @@ public class MyGrid<T> where T : class
         Debug.Log("Finished!");
     }
     public Cell<T>[] GetArray() { return m_Array; }
+    public T GetValueAt(GridPosition position)
+    {
+        bool valid = position.x < m_Layout.xCount && position.y < m_Layout.yCount && position.z < m_Layout.zCount;
+        if (!valid) { Debug.LogError($"Grid position {position.ToString()} is not valid in layout {m_Layout.ToString()}"); return null; }
+        uint index = position.z * (m_Layout.xCount * m_Layout.yCount) + position.y * m_Layout.xCount + position.x;
+        return m_Array[index].GetValue();
+    }
+    public void SetValueAt(GridPosition position, T value)
+    {
+        bool valid = position.x < m_Layout.xCount && position.y < m_Layout.yCount && position.z < m_Layout.zCount;
+        if (!valid) { Debug.LogError($"Grid position {position.ToString()} is not valid in layout {m_Layout.ToString()}"); return; }
+        uint index = position.z * (m_Layout.xCount * m_Layout.yCount) + position.y * m_Layout.xCount + position.x;
+        m_Array[index].SetValue(value);
+    }
     protected GridLayout m_Layout;
     protected Cell<T>[] m_Array;
 
