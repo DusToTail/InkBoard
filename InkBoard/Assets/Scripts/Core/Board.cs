@@ -52,4 +52,10 @@ public class Board : MonoBehaviour
     }
 #endif
 
+    public struct BoardData
+    {
+        public float betweenDistance;
+        public Vector3Int gridLayout;
+        public int[] blockIDs;
+    }
 }
