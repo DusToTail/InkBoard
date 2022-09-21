@@ -19,7 +19,6 @@ public class MyGrid<T> where T : class
             m_Array[i] = cell;
         }
     }
-
     ~MyGrid()
     {
     }
@@ -43,17 +42,22 @@ public class MyGrid<T> where T : class
     public Cell<T>[] GetArray() { return m_Array; }
     public T GetValueAt(GridPosition position)
     {
-        bool valid = position.x < m_Layout.xCount && position.y < m_Layout.yCount && position.z < m_Layout.zCount;
+        bool valid = IsValidPosition(position, m_Layout);
         if (!valid) { Debug.LogError($"Grid position {position.ToString()} is not valid in layout {m_Layout.ToString()}"); return null; }
         uint index = position.z * (m_Layout.xCount * m_Layout.yCount) + position.y * m_Layout.xCount + position.x;
         return m_Array[index].GetValue();
     }
     public void SetValueAt(GridPosition position, T value)
     {
-        bool valid = position.x < m_Layout.xCount && position.y < m_Layout.yCount && position.z < m_Layout.zCount;
+        bool valid = IsValidPosition(position, m_Layout);
         if (!valid) { Debug.LogError($"Grid position {position.ToString()} is not valid in layout {m_Layout.ToString()}"); return; }
         uint index = position.z * (m_Layout.xCount * m_Layout.yCount) + position.y * m_Layout.xCount + position.x;
         m_Array[index].SetValue(value);
+    }
+    public static bool IsValidPosition(GridPosition position, GridLayout layout)
+    {
+        bool valid = position.x < layout.xCount && position.y < layout.yCount && position.z < layout.zCount;
+        return valid;
     }
     protected GridLayout m_Layout;
     protected Cell<T>[] m_Array;
@@ -118,7 +122,6 @@ public class Cell<T> where T : class
         m_GridPosition = new GridPosition(x, y);
         m_Value = value;
     }
-
     ~Cell()
     {
     }
