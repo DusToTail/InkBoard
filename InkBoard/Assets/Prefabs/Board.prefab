@@ -44,9 +44,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bf4717ac96bbf33418ea3ef1fcfd3b38, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultBlock: {fileID: 487888784635433669, guid: 01b9b37f45c08ed4987f6e193a325d54,
-    type: 3}
-  betweenDistance: 5
-  gridLayout: {x: 3, y: 3, z: 5}
+  prefabs:
+  - {fileID: 487888784635433669, guid: 01b9b37f45c08ed4987f6e193a325d54, type: 3}
+  betweenDistance: 1.5
+  gridLayout: {x: 7, y: 5, z: 4}
   color: {r: 1, g: 0, b: 0, a: 1}
   displayGizmos: 1
