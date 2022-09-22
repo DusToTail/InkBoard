@@ -13,9 +13,33 @@ public class Board : MonoBehaviour
     private BoardData m_Data;
     private uint m_BlockInitIndex;
 
+    private RequestHandler<Board> m_RequestHandler;
+
     private void Start()
     {
         Init();
+
+        m_RequestHandler = new RequestHandler<Board>();
+        m_RequestHandler.AddNewRequest(DoA, ActionIsFalse);
+        m_RequestHandler.AddNewRequestAt(this, DoB, ActionIsTrue);
+        m_RequestHandler.ProcessRequests(true);
+    }
+
+    private void DoA(Board board)
+    {
+        Debug.Log($"Board {board.name} did A!");
+    }
+    private void DoB(Board board)
+    {
+        Debug.Log($"Board {board.name} did B!");
+    }
+    private bool ActionIsTrue(Board board)
+    {
+        return true;
+    }
+    private bool ActionIsFalse(Board board)
+    {
+        return false;
     }
 
     public void Init()
