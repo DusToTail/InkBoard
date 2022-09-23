@@ -26,7 +26,7 @@ public class RequestHandler<T> where T : class
         var newRequest = new Request(action, validCheck, null);
         m_RequestList.Add(newRequest);
     }
-    public void AddNewRequestAt(T target, Action<T> action, Func<T, bool> validCheck)
+    public void StackNewRequestAt(T target, Action<T> action, Func<T, bool> validCheck, bool addNewIfNull = true)
     {
 
         var baseRequest = GetRequestAt(target);
@@ -35,10 +35,10 @@ public class RequestHandler<T> where T : class
             baseRequest.SetFinalRequest(action, validCheck);
             return; 
         }
-        var newRequest = new Request(action, validCheck, null);
-        m_RequestList.Add(newRequest);
+        if (addNewIfNull)
+            AddNewRequest(action, validCheck);
     }
-    public void AddNewRequestAt(int index, Action<T> action, Func<T, bool> validCheck)
+    public void StackNewRequestAt(int index, Action<T> action, Func<T, bool> validCheck, bool addNewIfNull = true)
     {
 
         var baseRequest = GetRequestAt(index);
@@ -47,35 +47,40 @@ public class RequestHandler<T> where T : class
             baseRequest.SetFinalRequest(action, validCheck);
             return;
         }
-        var newRequest = new Request(action, validCheck, null);
-        m_RequestList.Add(newRequest);
+
+        if(addNewIfNull)
+            AddNewRequest(action, validCheck);
     }
-    public void AddNewRequestAt(Predicate<Request> predicate, Action<T> action, Func<T, bool> validCheck)
+    public void StackNewRequestAt(Action<T> targetAction, Action<T> action, Func<T, bool> validCheck, bool addNewIfNull = true)
     {
 
-        var baseRequest = GetRequestAt(predicate);
+        var baseRequest = GetRequestAt(targetAction);
         if (baseRequest != null)
         {
             baseRequest.SetFinalRequest(action, validCheck);
             return;
         }
-        var newRequest = new Request(action, validCheck, null);
-        m_RequestList.Add(newRequest);
+        if (addNewIfNull)
+            AddNewRequest(action, validCheck);
     }
-    public Request GetRequestAt(T target)
+    private Request GetRequestAt(T target)
     {
         return m_RequestList.Find(x => x.Target == target);
     }
-    public Request GetRequestAt(int index)
+    private Request GetRequestAt(int index)
     {
         if(index < 0 || index >= m_RequestList.Count) { return null; }
         return m_RequestList[index];
     }
-    public Request GetRequestAt(Predicate<Request> predicate)
+    private Request GetRequestAt(Predicate<Request> predicate)
     {
         return m_RequestList.Find(predicate);
     }
-    public Request[] GetRequests(Predicate<Request> predicate)
+    private Request GetRequestAt(Action<T> targetAction)
+    {
+        return m_RequestList.Find(x=>x.Action == targetAction);
+    }
+    private Request[] GetRequests(Predicate<Request> predicate)
     {
         return m_RequestList.FindAll(predicate).ToArray();
     }
@@ -83,7 +88,7 @@ public class RequestHandler<T> where T : class
 
     private List<Request> m_RequestList;
 
-    public class Request
+    private class Request
     {
         public Request(Action<T> action, Func<T, bool> valid, Request ifInvalidRequest = null)
         {

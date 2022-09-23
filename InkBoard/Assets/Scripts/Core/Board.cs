@@ -21,7 +21,7 @@ public class Board : MonoBehaviour
 
         m_RequestHandler = new RequestHandler<Board>();
         m_RequestHandler.AddNewRequest(DoA, ActionIsFalse);
-        m_RequestHandler.AddNewRequestAt(this, DoB, ActionIsTrue);
+        m_RequestHandler.StackNewRequestAt(this, DoB, ActionIsTrue);
         m_RequestHandler.ProcessRequests(true);
     }
 
