@@ -11,7 +11,7 @@ public class RequestHandler<T> where T : class
     {
     }
 
-    public void ProcessRequests(bool clearOnFinished)
+    public void ProcessRequests(bool clearOnFinished = true)
     {
         for(int i = 0; i < m_RequestList.Count; i++)
         {
