@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class Board : MonoBehaviour
 {
+    public GridLayout Layout { get { return m_Layout; } }
+
     [Header("Configurations")]
     [SerializeField] private GameObject[] prefabs;
     [SerializeField] private float betweenDistance;
@@ -12,18 +14,16 @@ public class Board : MonoBehaviour
     private MyGrid<Block> m_Grid;
     private BoardData m_Data;
     private uint m_BlockInitIndex;
-
-    private RequestHandler<Board> m_RequestHandler;
+    private GridLayout m_Layout;
+    private RequestHandler<Board> m_BoardHandler;
     private TurnController<Board> m_TurnController;
 
     private void Start()
     {
-        Init();
-
-        m_RequestHandler = new RequestHandler<Board>();
-        m_RequestHandler.AddNewRequest(DoA, ActionConditionIsFalse);
-        m_RequestHandler.StackNewRequestAt(this, DoB, ActionConditionIsTrue);
-        m_RequestHandler.ProcessRequests(true);
+        m_BoardHandler = new RequestHandler<Board>();
+        m_BoardHandler.AddNewRequest(DoA, ActionConditionIsFalse);
+        m_BoardHandler.StackNewRequestAt(this, DoB, ActionConditionIsTrue);
+        m_BoardHandler.ProcessRequests(true);
 
         m_TurnController = new TurnController<Board>(DoDefault);
         m_TurnController.RegisterPlayer(this, DoDefault);
@@ -35,6 +35,7 @@ public class Board : MonoBehaviour
         }
         m_TurnController.DebugLog(TurnController<Board>.DEBUG_INFO.TURNS);
     }
+    
     private bool DoDefault(Board board)
     {
         Debug.Log($"Board {board.name} did default!");
@@ -58,7 +59,7 @@ public class Board : MonoBehaviour
     {
         return false;
     }
-
+    
     public void Init()
     {
         if(m_Data != null)
@@ -66,14 +67,33 @@ public class Board : MonoBehaviour
             betweenDistance = m_Data.betweenDistance;
             gridLayout = new Vector3Int((int)m_Data.width, (int)m_Data.length, (int)m_Data.height);
         }
-        m_Grid = new MyGrid<Block>(new GridLayout((uint)gridLayout.x, (uint)gridLayout.y, (uint)gridLayout.z));
+        m_Layout = new GridLayout((uint)gridLayout.x, (uint)gridLayout.y, (uint)gridLayout.z);
+        m_Grid = new MyGrid<Block>(m_Layout);
         m_BlockInitIndex = 0;
         m_Grid.ForEach(CreateBlockAtCell);
 #if DEBUG
         m_Grid.DebugLog();
 #endif
     }
-
+    public Block GetBlockAt(GridPosition gridPosition)
+    {
+        var block = m_Grid.GetValueAt(gridPosition);
+        return block;
+    }
+    public Vector3 GetWorldPositionAt(Vector3Int gridPosition)
+    {
+        Vector3 localPosition = (Vector3)gridPosition * betweenDistance;
+        return transform.position + localPosition;
+    }
+    public void SetBlockAt(GridPosition gridPosition, Block block)
+    {
+        m_Grid.SetValueAt(gridPosition, block);
+    }
+    public bool HasValueAt(GridPosition gridPosition)
+    {
+        var block = m_Grid.GetValueAt(gridPosition);
+        return block == null ? false : true;
+    }
     private void CreateBlockAtCell(Cell<Block> cell)
     {
         Vector3Int gridPosition = cell.GetGridPositionVec3();
@@ -81,21 +101,19 @@ public class Board : MonoBehaviour
         var prefab = GetBlockFromID(m_Data == null ? 0 : m_Data.blockIDs[m_BlockInitIndex]);
 
         if (prefab == null) { return; }
-
-        var blockObj = Instantiate(prefab, transform.position + localPosition, Quaternion.identity, transform);
+        Vector3 worldPosition = transform.position + localPosition;
+        var blockObj = Instantiate(prefab, worldPosition, Quaternion.identity, transform);
         var block = blockObj.GetComponent<Block>();
         block.Init();
         cell.SetValue(block);
 
         m_BlockInitIndex++;
     }
-
     private GameObject GetBlockFromID(int id)
     {
+        if(id == -1) { return null; }
         return System.Array.Find(prefabs, x => x.GetComponent<Block>().ID == id);
     }
-
-    
 
 #if DEBUG
     private void DrawGizmosCubeAtCell(Cell<Block> cell)
@@ -105,7 +123,6 @@ public class Board : MonoBehaviour
         Gizmos.color = color;
         Gizmos.DrawWireCube(transform.position + localPosition, Vector3.one);
     }
-
     private void OnDrawGizmos()
     {
         if (!displayGizmos) { return; }
@@ -114,6 +131,7 @@ public class Board : MonoBehaviour
     }
 #endif
 
+    [System.Serializable]
     public class BoardData : IPersistentData
     {
         public float betweenDistance;

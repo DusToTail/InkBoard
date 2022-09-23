@@ -2,11 +2,11 @@ using UnityEngine;
 
 public class Block : MonoBehaviour
 {
-    [SerializeField] protected int id;
+    [SerializeField] private int blockID;
 
-    public int ID { get { return id; } }
+    public int ID { get { return blockID; } }
 
-    public virtual void Init()
+    public void Init()
     {
     }
 }
