@@ -14,30 +14,47 @@ public class Board : MonoBehaviour
     private uint m_BlockInitIndex;
 
     private RequestHandler<Board> m_RequestHandler;
+    private TurnController<Board> m_TurnController;
 
     private void Start()
     {
         Init();
 
         m_RequestHandler = new RequestHandler<Board>();
-        m_RequestHandler.AddNewRequest(DoA, ActionIsFalse);
-        m_RequestHandler.StackNewRequestAt(this, DoB, ActionIsTrue);
+        m_RequestHandler.AddNewRequest(DoA, ActionConditionIsFalse);
+        m_RequestHandler.StackNewRequestAt(this, DoB, ActionConditionIsTrue);
         m_RequestHandler.ProcessRequests(true);
-    }
 
-    private void DoA(Board board)
+        m_TurnController = new TurnController<Board>(DoDefault);
+        m_TurnController.RegisterPlayer(this, DoDefault);
+        m_TurnController.RegisterAction(this, DoA);
+        m_TurnController.RegisterAction(this, DoB);
+        for (int i = 0; i < 3; i++)
+        {
+            m_TurnController.ProcessTurn();
+        }
+        m_TurnController.DebugLog(TurnController<Board>.DEBUG_INFO.TURNS);
+    }
+    private bool DoDefault(Board board)
+    {
+        Debug.Log($"Board {board.name} did default!");
+        return true;
+    }
+    private bool DoA(Board board)
     {
         Debug.Log($"Board {board.name} did A!");
+        return true;
     }
-    private void DoB(Board board)
+    private bool DoB(Board board)
     {
         Debug.Log($"Board {board.name} did B!");
+        return true;
     }
-    private bool ActionIsTrue(Board board)
+    private bool ActionConditionIsTrue(Board board)
     {
         return true;
     }
-    private bool ActionIsFalse(Board board)
+    private bool ActionConditionIsFalse(Board board)
     {
         return false;
     }
