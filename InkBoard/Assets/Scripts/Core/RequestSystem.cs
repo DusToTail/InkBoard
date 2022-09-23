@@ -11,7 +11,7 @@ public class RequestHandler<T> where T : class
     {
     }
 
-    public void ProcessRequests(bool clearOnFinished = true)
+    public void ProcessRequests(bool clearOnFinished)
     {
         for(int i = 0; i < m_RequestList.Count; i++)
         {
@@ -21,12 +21,12 @@ public class RequestHandler<T> where T : class
         if (clearOnFinished)
             m_RequestList.Clear();
     }
-    public void AddNewRequest(Action<T> action, Func<T, bool> validCheck)
+    public void AddNewRequest(Func<T, bool> action, Func<T, bool> validCheck)
     {
         var newRequest = new Request(action, validCheck, null);
         m_RequestList.Add(newRequest);
     }
-    public void StackNewRequestAt(T target, Action<T> action, Func<T, bool> validCheck, bool addNewIfNull = true)
+    public void StackNewRequestAt(T target, Func<T, bool> action, Func<T, bool> validCheck, bool addNewIfNull = true)
     {
 
         var baseRequest = GetRequestAt(target);
@@ -38,7 +38,7 @@ public class RequestHandler<T> where T : class
         if (addNewIfNull)
             AddNewRequest(action, validCheck);
     }
-    public void StackNewRequestAt(int index, Action<T> action, Func<T, bool> validCheck, bool addNewIfNull = true)
+    public void StackNewRequestAt(int index, Func<T, bool> action, Func<T, bool> validCheck, bool addNewIfNull = true)
     {
 
         var baseRequest = GetRequestAt(index);
@@ -51,7 +51,7 @@ public class RequestHandler<T> where T : class
         if(addNewIfNull)
             AddNewRequest(action, validCheck);
     }
-    public void StackNewRequestAt(Action<T> targetAction, Action<T> action, Func<T, bool> validCheck, bool addNewIfNull = true)
+    public void StackNewRequestAt(Func<T, bool> targetAction, Func<T, bool> action, Func<T, bool> validCheck, bool addNewIfNull = true)
     {
 
         var baseRequest = GetRequestAt(targetAction);
@@ -76,7 +76,7 @@ public class RequestHandler<T> where T : class
     {
         return m_RequestList.Find(predicate);
     }
-    private Request GetRequestAt(Action<T> targetAction)
+    private Request GetRequestAt(Func<T, bool> targetAction)
     {
         return m_RequestList.Find(x=>x.Action == targetAction);
     }
@@ -90,7 +90,7 @@ public class RequestHandler<T> where T : class
 
     private class Request
     {
-        public Request(Action<T> action, Func<T, bool> valid, Request ifInvalidRequest = null)
+        public Request(Func<T, bool> action, Func<T, bool> valid, Request ifInvalidRequest = null)
         {
             m_Action = action;
             m_ValidCheck = valid;
@@ -103,14 +103,14 @@ public class RequestHandler<T> where T : class
 
         public void Execute()
         {
-            Action<T> finalAction = GetFinalValidAction();
+            Func<T, bool> finalAction = GetFinalValidAction();
             if(finalAction == null) { return; }
 
             T finalTarget = finalAction.Target as T;
             finalAction.Invoke(finalTarget);
         }
 
-        public Action<T> GetFinalValidAction()
+        public Func<T, bool> GetFinalValidAction()
         {
             if (!IsValid)
             {
@@ -121,7 +121,7 @@ public class RequestHandler<T> where T : class
             return m_Action;
         }
 
-        public void SetFinalRequest(Action<T> action, Func<T, bool> valid)
+        public void SetFinalRequest(Func<T, bool> action, Func<T, bool> valid)
         {
             GetFinalRequest().m_IfInvalidRequest = new Request(action, valid, null);
         }
@@ -133,11 +133,11 @@ public class RequestHandler<T> where T : class
             return this;
         }
 
-        public Action<T> Action { get { return m_Action; } }
+        public Func<T, bool> Action { get { return m_Action; } }
         public bool IsValid { get { return m_ValidCheck(m_Target); } }
         public T Target { get { return m_Target; } }
 
-        private Action<T> m_Action;
+        private Func<T, bool> m_Action;
         private Request m_IfInvalidRequest;
         private Func<T, bool> m_ValidCheck;
         private T m_Target;
