@@ -164,7 +164,9 @@ public struct GridPosition
         this.z = 0;
     }
     public static implicit operator Vector3Int(GridPosition pos) { return new Vector3Int((int)pos.x, (int)pos.y, (int)pos.z); }
+    public static implicit operator Vector3(GridPosition pos) { return new Vector3((float)pos.x, (float)pos.y, (float)pos.z); }
     public static implicit operator Vector2Int(GridPosition pos) { return new Vector2Int((int)pos.x, (int)pos.y); }
+    public static implicit operator Vector2(GridPosition pos) { return new Vector2((float)pos.x, (float)pos.y); }
     public override string ToString()
     {
         return string.Format("{0} {1} {2}", x,y,z);
