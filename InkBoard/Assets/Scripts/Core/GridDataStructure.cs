@@ -45,7 +45,7 @@ public class MyGrid<T> where T : class
         bool valid = IsValidPosition(position, m_Layout);
         if (!valid) { Debug.LogError($"Grid position {position.ToString()} is not valid in layout {m_Layout.ToString()}"); return null; }
         uint index = position.z * (m_Layout.xCount * m_Layout.yCount) + position.y * m_Layout.xCount + position.x;
-        return m_Array[index].GetValue();
+        return m_Array[index].Value;
     }
     public void SetValueAt(GridPosition position, T value)
     {
@@ -125,9 +125,9 @@ public class Cell<T> where T : class
     ~Cell()
     {
     }
-    public Vector3Int GetGridPositionVec3() { return m_GridPosition; }
+    public Vector3Int GridPosition { get { return m_GridPosition; } }
     public GridPosition GetGridPosition() { return m_GridPosition; }
-    public T GetValue() { return m_Value; }
+    public T Value { get { return m_Value; } }
     public void SetValue(T val) { m_Value = val; }
     public override string ToString()
     {
