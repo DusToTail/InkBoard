@@ -4,12 +4,10 @@ using UnityEngine;
 
 public class TurnController<T> where T : class
 {
-    public enum CHECK : int
+    public enum REGISTER_STATUS : int
     {
-        PLAYER_NOT_EXIST = 0,
-        PLAYER_EXIST,
-        REGISTER_SUCCESS,
-        REGISTER_FAIL
+        SUCCESS,
+        FAIL
     }
     public enum DEBUG_INFO : int
     {
@@ -43,9 +41,9 @@ public class TurnController<T> where T : class
         m_Turns.Add(turn);
         m_TurnIndex++;
     }
-    public CHECK RegisterPlayer(T playerObject, Func<T, bool> playerDefaultAction)
+    public REGISTER_STATUS RegisterPlayer(T playerObject, Func<T, bool> playerDefaultAction)
     {
-        if (PlayerIsRegistered(playerObject)) { return CHECK.PLAYER_EXIST; }
+        if (PlayerIsRegistered(playerObject)) { return REGISTER_STATUS.FAIL; }
         Player newPlayer = new Player(m_PlayerIDCount++, playerObject);
         Func<T, bool> useDefaultAction;
         if (playerDefaultAction != null)
@@ -56,25 +54,25 @@ public class TurnController<T> where T : class
 
         m_Players.Add(newPlayer);
         m_AttachedActions.Add(attachedTurn);
-        return CHECK.REGISTER_SUCCESS;
+        return REGISTER_STATUS.SUCCESS;
     }
-    public CHECK RegisterAction(T playerObject, Func<T, bool> action)
+    public REGISTER_STATUS RegisterAction(T playerObject, Func<T, bool> action)
     {
-        if(!PlayerIsRegistered(playerObject)) { return CHECK.PLAYER_NOT_EXIST; }
+        if(!PlayerIsRegistered(playerObject)) { return REGISTER_STATUS.FAIL; }
         var perPlayerAction = GetAttachedAction(playerObject);
-        if (perPlayerAction == null) { return CHECK.REGISTER_FAIL; }
+        if (perPlayerAction == null) { return REGISTER_STATUS.FAIL; }
 
         perPlayerAction.SetAction(action);
-        return CHECK.REGISTER_SUCCESS;
+        return REGISTER_STATUS.SUCCESS;
     }
-    public CHECK RegisterAction(int playerID, Func<T, bool> action)
+    public REGISTER_STATUS RegisterAction(int playerID, Func<T, bool> action)
     {
-        if (!PlayerIsRegistered(playerID)) { return CHECK.PLAYER_NOT_EXIST; }
+        if (!PlayerIsRegistered(playerID)) { return REGISTER_STATUS.FAIL; }
         var perPlayerAction = GetAttachedAction(playerID);
-        if (perPlayerAction == null) { return CHECK.REGISTER_FAIL; }
+        if (perPlayerAction == null) { return REGISTER_STATUS.FAIL; }
 
         perPlayerAction.SetAction(action);
-        return CHECK.REGISTER_SUCCESS;
+        return REGISTER_STATUS.SUCCESS;
     }
 #if DEBUG
     public void DebugLog(DEBUG_INFO info)
@@ -209,7 +207,7 @@ public class TurnController<T> where T : class
         public STATUS Status { get { return m_Status; } }
         public override string ToString()
         {
-            return String.Format("Player: {0} - Action: {1} {2}", m_Player, m_Action.Method.Name, m_Status);
+            return String.Format("Player: {0} - Action: {1} - Status: {2}", m_Player, m_Action.Method.Name, m_Status);
         }
         private Player m_Player;
         private Func<T, bool> m_Action;
@@ -225,7 +223,6 @@ public class TurnController<T> where T : class
         }
         ~Player()
         {
-
         }
         public override string ToString()
         {

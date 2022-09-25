@@ -31,15 +31,25 @@ public class BaseCharacter : MonoBehaviour
     public virtual void Init(object data)
     {
         if (data == null) { return; }
+        Debug.Log("BaseCharacter: Init");
         m_BaseData = data as BaseCharacterData;
         gridPosition = m_BaseData.GridPosition;
         id = m_BaseData.id;
+    }
+    public virtual bool DefaultAction() 
+    { 
+        Debug.Log("BaseCharacter: DefaultAction");
+        return true; 
+    }
+    public virtual bool SendMoveRequest()
+    {
+        Debug.Log("BaseCharacter: SendMoveRequest");
+        return true;
     }
     public void SetGridPosition(Vector3Int gridPosition)
     {
         this.gridPosition = gridPosition;
     }
-
     [System.Serializable]
     public class BaseCharacterData : IPersistentData
     {
