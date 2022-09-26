@@ -15,7 +15,7 @@ public class Board : MonoBehaviour
     [SerializeField] private bool displayGizmos;
     private MyGrid<Block> m_Grid;
     private BoardData m_Data;
-    private uint m_BlockInitIndex;
+    private int m_BlockInitIndex;
     private GridLayout m_Layout;
     private RequestHandler<Board> m_BoardHandler;
     private TurnController<Board> m_TurnController;
@@ -75,7 +75,7 @@ public class Board : MonoBehaviour
             DeserializeData(data); 
         m_Layout = new GridLayout((uint)gridLayout.x, (uint)gridLayout.y, (uint)gridLayout.z);
         m_Grid = new MyGrid<Block>(m_Layout);
-        m_BlockInitIndex = 0;
+        m_BlockInitIndex = -1;
         m_Grid.ForEach(CreateBlockAtCell);
 #if DEBUG
         //m_Grid.DebugLog();
@@ -113,22 +113,23 @@ public class Board : MonoBehaviour
     {
         m_Data = JsonUtility.FromJson<BoardData>(content);
         betweenDistance = m_Data.betweenDistance;
-        gridLayout = new Vector3Int((int)m_Data.width, (int)m_Data.length, (int)m_Data.height);
+        gridLayout = new Vector3Int((int)m_Data.width, (int)m_Data.height, (int)m_Data.length);
     }
     private void CreateBlockAtCell(Cell<Block> cell)
     {
         Vector3Int gridPosition = cell.GridPosition;
         Vector3 localPosition = (Vector3)gridPosition * betweenDistance;
+        m_BlockInitIndex++;
         var prefab = GetBlockFromID(m_Data == null ? 0 : m_Data.blockIDs[m_BlockInitIndex]);
+        if (prefab == null) { Debug.Log($"Board: {cell} Empty"); return; }
 
-        if (prefab == null) { return; }
         Vector3 worldPosition = transform.position + localPosition;
         var blockObj = Instantiate(prefab, worldPosition, Quaternion.identity, transform);
         var block = blockObj.GetComponent<Block>();
         block.Init();
         cell.SetValue(block);
 
-        m_BlockInitIndex++;
+        Debug.Log($"Board: {cell} {block.ID}");
     }
     private GameObject GetBlockFromID(int id)
     {

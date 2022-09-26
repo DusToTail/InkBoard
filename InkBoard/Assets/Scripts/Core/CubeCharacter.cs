@@ -100,7 +100,9 @@ public class CubeCharacter : BaseCharacter
         public override bool Execute()
         {
             m_Cube.SetGridPosition(m_To);
-            m_Cube.transform.position = Board.Instance.GetWorldPositionAt(m_To);
+            // Lerp position
+            m_Cube.SetPosition(Board.Instance.GetWorldPositionAt(m_To));
+            // Lerp rotation
             return true;
         }
         public override bool IsValid()
@@ -124,14 +126,14 @@ public class CubeCharacter : BaseCharacter
     [System.Serializable]
     public class CubeData : BaseCharacterData
     {
-        public CubeData(int id, Vector3Int gridPosition, Vector3Int orientation)
-            : base(id, gridPosition, orientation)
+        public CubeData(int id, Vector3Int gridPosition, string[] front_up_right)
+            : base(id, gridPosition, front_up_right)
         {
         }
 
-        public override void SetData(int id, Vector3Int gridPosition, Vector3Int orientation)
+        public override void SetData(int id, Vector3Int gridPosition, string[] front_up_right)
         {
-            base.SetData(id, gridPosition, orientation);
+            base.SetData(id, gridPosition, front_up_right);
         }
 
         public override void LoadFrom(object data)

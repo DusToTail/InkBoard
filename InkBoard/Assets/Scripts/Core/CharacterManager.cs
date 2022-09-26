@@ -35,7 +35,7 @@ public class CharacterManager : MonoBehaviour
         if(!string.IsNullOrEmpty(data))
             DeserializeData(data);
         m_Grid = new MyGrid<BaseCharacter>(board.Layout);
-        m_CharacterInitIndex = 0;
+        m_CharacterInitIndex = -1;
         m_Grid.ForEach(CreateCharacterAtCell);
 #if DEBUG
         //m_Grid.DebugLog();
@@ -83,15 +83,13 @@ public class CharacterManager : MonoBehaviour
     private void CreateCharacterAtCell(Cell<BaseCharacter> cell)
     {
         Debug.Log("Character at " + cell.GridPosition);
+        m_CharacterInitIndex++;
         var data = m_Datas[m_CharacterInitIndex];
         if(data == null) { Debug.LogError("Data is null!"); return; }
-        if (data.id == -1) { Debug.Log("ID is -1!"); return; }
         var prefab = GetCharacterFromID(data.id);
-        if(prefab == null) { Debug.LogError("No prefab found with ID: " + data.id + "!"); return; }
+        if(prefab == null) { Debug.Log($"CharacterManager: {cell} Empty"); return; }
 
-        Vector3Int gridPosition = data.GridPosition;
-        Vector3 worldPosition = board.GetWorldPositionAt(gridPosition);
-        var characterObj = Instantiate(prefab, worldPosition, Quaternion.identity, transform);
+        var characterObj = Instantiate(prefab, transform);
         var character = characterObj.GetComponent<BaseCharacter>();
         character.Init(data);
         character.manager = this;
@@ -100,8 +98,7 @@ public class CharacterManager : MonoBehaviour
         {
             return x.DefaultAction();
         });
-        m_CharacterInitIndex++;
-        Debug.Log("Created!");
+        Debug.Log($"CharacterManager: {cell} {character.ID}");
     }
     private void AddCharacter(BaseCharacter character)
     {

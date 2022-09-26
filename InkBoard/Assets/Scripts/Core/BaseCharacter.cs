@@ -33,8 +33,10 @@ public class BaseCharacter : MonoBehaviour
         if (data == null) { return; }
         Debug.Log("BaseCharacter: Init");
         m_BaseData = data as BaseCharacterData;
-        gridPosition = m_BaseData.GridPosition;
         id = m_BaseData.id;
+        SetGridPosition(m_BaseData.GridPosition);
+        SetPosition(Board.Instance.GetWorldPositionAt(m_BaseData.GridPosition));
+        SetRotation(Quaternion.LookRotation(m_BaseData.Front, m_BaseData.Up));
     }
     public virtual bool DefaultAction() 
     { 
@@ -46,32 +48,42 @@ public class BaseCharacter : MonoBehaviour
         Debug.Log("BaseCharacter: SendMoveRequest");
         return true;
     }
-    public void SetGridPosition(Vector3Int gridPosition)
+    protected void SetGridPosition(Vector3Int gridPosition)
     {
         this.gridPosition = gridPosition;
+    }
+    protected void SetPosition(Vector3 worldPosition)
+    {
+        transform.position = worldPosition;
+    }
+    protected void SetRotation(Quaternion rotation)
+    {
+        transform.rotation = rotation;
     }
     [System.Serializable]
     public class BaseCharacterData : IPersistentData
     {
         public Vector3Int GridPosition { get { return new Vector3Int(gridPosition[0], gridPosition[1], gridPosition[2]); } }
-        public Vector3Int Orientation { get { return new Vector3Int(orientation[0], orientation[1], orientation[2]); } }
+        public Direction Front { get { return Direction.StringDictionary[front_up_right[0]]; } }
+        public Direction Up { get { return Direction.StringDictionary[front_up_right[1]]; } }
+        public Direction Right { get { return Direction.StringDictionary[front_up_right[2]]; } }
         public string actualType;
         public int id;
         public int[] gridPosition;
-        public int[] orientation;
+        public string[] front_up_right;
 
-        public BaseCharacterData(int id, Vector3Int gridPosition, Vector3Int orientation)
+        public BaseCharacterData(int id, Vector3Int gridPosition, string[] orientation)
         {
             this.id = id;
             this.gridPosition = new int[] { gridPosition.x, gridPosition.y, gridPosition.z };
-            this.orientation = new int[] { orientation.x, orientation.y, orientation.z };
+            this.front_up_right = new string[] { orientation[0], orientation[1], orientation[2] };
         }
 
-        public virtual void SetData(int id, Vector3Int gridPosition, Vector3Int orientation)
+        public virtual void SetData(int id, Vector3Int gridPosition, string[] orientation)
         {
             this.id = id;
             this.gridPosition = new int[] { gridPosition.x, gridPosition.y, gridPosition.z };
-            this.orientation = new int[] { orientation.x, orientation.y, orientation.z };
+            this.front_up_right = new string[] { orientation[0], orientation[1], orientation[2] };
         }
 
         public virtual void LoadFrom(object data)
@@ -79,9 +91,9 @@ public class BaseCharacter : MonoBehaviour
             BaseCharacterData baseCharacterData = data as BaseCharacterData;
             id = baseCharacterData.id;
             gridPosition = baseCharacterData.gridPosition;
-            orientation = baseCharacterData.orientation;
-            SetIntArray(gridPosition, baseCharacterData.gridPosition);
-            SetIntArray(orientation, baseCharacterData.orientation);
+            front_up_right = baseCharacterData.front_up_right;
+            SetArray(gridPosition, baseCharacterData.gridPosition);
+            SetArray(front_up_right, baseCharacterData.front_up_right);
         }
 
         public virtual void SaveTo(object data)
@@ -89,12 +101,12 @@ public class BaseCharacter : MonoBehaviour
             BaseCharacterData baseCharacterData = data as BaseCharacterData;
             baseCharacterData.id = id;
             baseCharacterData.gridPosition = gridPosition;
-            baseCharacterData.orientation = orientation;
-            SetIntArray(baseCharacterData.gridPosition, gridPosition);
-            SetIntArray(baseCharacterData.orientation, orientation);
+            baseCharacterData.front_up_right = front_up_right;
+            SetArray(baseCharacterData.gridPosition, gridPosition);
+            SetArray(baseCharacterData.front_up_right, front_up_right);
         }
 
-        public void SetIntArray(int[] srcArray, int[] destArray)
+        public void SetArray<T>(T[] srcArray, T[] destArray)
         {
             System.Array.Copy(srcArray, destArray, srcArray.Length);
         }

@@ -24,10 +24,19 @@ public class GameManager : MonoBehaviour
         m_TurnController = new TurnController<BaseCharacter>((x) => { return x.DefaultAction(); });
         m_MovementHandler = new RequestHandler<Movement>();
 
-        Board.Instance.Init(string.Empty);
+        string boardData = @"
+{
+""betweenDistance"": 1,
+""width"": 3,
+""length"": 3,
+""height"": 2, 
+""blockIDs"": [  0,  0,  0, -1, -1, -1,  0,  0,  0, 
+                -1, -1, -1,  0,  0,  0, -1, -1, -1  ]
+}";
+        Board.Instance.Init(boardData);
 
-        string cubeData = @"{""actualType"": ""CubeCharacter.CubeData"", ""id"": 0, ""gridPosition"": [0, 0, 0], ""orientation"": [1, 1, 1]}";
-        string noCharacterData = @"{""actualType"": ""BaseCharacter.BaseCharacterData"", ""id"": -1, ""gridPosition"": [-1, -1, -1], ""orientation"": [-1, -1, -1]}";
+        string cubeData = @"{""actualType"": ""CubeCharacter.CubeData"", ""id"": 0, ""gridPosition"": [0, 1, 0], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string noCharacterData = @"{""actualType"": ""BaseCharacter.BaseCharacterData"", ""id"": -1, ""gridPosition"": [-1, -1, -1], ""front_up_right"": [""None"", ""None"", ""None""]}";
         string[] example = new string[Board.Instance.Layout.GetTotalCount()];
         System.Array.Fill(example, noCharacterData);
         example.SetValue(cubeData, 0);
