@@ -97,7 +97,8 @@ public class CharacterManager : MonoBehaviour
         GameManager.Instance.RegisterPlayer(character, (x) =>
         {
             return x.DefaultAction();
-        });
+        },
+        "Default Action");
         Debug.Log($"CharacterManager: {cell} {character.ID}");
     }
     private void AddCharacter(BaseCharacter character)

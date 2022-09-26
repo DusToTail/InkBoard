@@ -52,12 +52,13 @@ public class GameManager : MonoBehaviour
         // Process requests after the request list has been populated in TurnController
         ProcessRequests<Movement>();
     }
-    public void RegisterPlayer<T>(T playerObject, Func<T, bool> playerDefaultAction) where T : BaseCharacter
+    public void RegisterPlayer<T>(T playerObject, Func<T, bool> playerDefaultAction, string actionName) where T : BaseCharacter
     {
         var status = m_TurnController.RegisterPlayer(playerObject, (x) =>
         {
-            return playerDefaultAction.Invoke(playerObject);
-        });
+            return playerDefaultAction.Invoke(x as T);
+        },
+        actionName);
         if(status == TurnController<BaseCharacter>.REGISTER_STATUS.FAIL) 
         {
             Debug.Log("Player Registration: FAIL", this);
@@ -69,12 +70,13 @@ public class GameManager : MonoBehaviour
             Debug.Log($"{playerObject.gameObject} registered successfully.", playerObject);
         }
     }
-    public void RegisterAction<T>(T playerObject, Func<T, bool> action) where T : BaseCharacter
+    public void RegisterAction<T>(T playerObject, Func<T, bool> action, string actionName) where T : BaseCharacter
     {
         m_TurnController.RegisterAction(playerObject, (x)=>
         {
-            return action.Invoke(playerObject);
-        });
+            return action.Invoke(x as T);
+        },
+        actionName);
     }
     public void Request<T>(T change) where T : Change
     {

@@ -15,38 +15,31 @@ public class CubeCharacter : BaseCharacter
         if (Input.GetKeyDown(KeyCode.A))
         {
             GetAndSetMovement(GridPosition, GridPosition + Direction.Left);
-            GameManager.Instance.RegisterAction(this, (x) =>
-            {
-                return x.SendMoveRequest();
-            });
+            GameManager.Instance.RegisterAction(this, Move, "Move Left");
             GameManager.Instance.ProcessTurn();
         }
         else if(Input.GetKeyDown(KeyCode.D))
         {
             GetAndSetMovement(GridPosition, GridPosition + Direction.Right);
-            GameManager.Instance.RegisterAction(this, (x) =>
-            {
-                return x.SendMoveRequest();
-            });
+            GameManager.Instance.RegisterAction(this, Move, "Move Right");
             GameManager.Instance.ProcessTurn();
         }
         else if(Input.GetKeyDown(KeyCode.W))
         {
             GetAndSetMovement(GridPosition, GridPosition + Direction.Front);
-            GameManager.Instance.RegisterAction(this, (x) =>
-            {
-                return x.SendMoveRequest();
-            });
+            GameManager.Instance.RegisterAction(this, Move, "Move Forward");
             GameManager.Instance.ProcessTurn();
         }
         else if (Input.GetKeyDown(KeyCode.S))
         {
             GetAndSetMovement(GridPosition, GridPosition + Direction.Back);
-            GameManager.Instance.RegisterAction(this, (x) =>
-            {
-                return x.SendMoveRequest();
-            });
+            GameManager.Instance.RegisterAction(this, Move, "Move Back");
             GameManager.Instance.ProcessTurn();
+        }
+
+        bool Move(CubeCharacter cube)
+        {
+            return cube.SendMoveRequest();
         }
     }
 

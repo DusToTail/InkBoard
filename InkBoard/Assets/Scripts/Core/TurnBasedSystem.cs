@@ -41,37 +41,32 @@ public class TurnController<T> where T : class
         m_Turns.Add(turn);
         m_TurnIndex++;
     }
-    public REGISTER_STATUS RegisterPlayer(T playerObject, Func<T, bool> playerDefaultAction)
+    public REGISTER_STATUS RegisterPlayer(T playerObject, Func<T, bool> action, string actionName)
     {
         if (PlayerIsRegistered(playerObject)) { return REGISTER_STATUS.FAIL; }
         Player newPlayer = new Player(m_PlayerIDCount++, playerObject);
-        Func<T, bool> useDefaultAction;
-        if (playerDefaultAction != null)
-            useDefaultAction = playerDefaultAction;
-        else
-            useDefaultAction = m_DefaultAction;
-        var attachedTurn = new AttachedAction(newPlayer, useDefaultAction);
+        var attachedTurn = new AttachedAction(newPlayer, action, actionName);
 
         m_Players.Add(newPlayer);
         m_AttachedActions.Add(attachedTurn);
         return REGISTER_STATUS.SUCCESS;
     }
-    public REGISTER_STATUS RegisterAction(T playerObject, Func<T, bool> action)
+    public REGISTER_STATUS RegisterAction(T playerObject, Func<T, bool> action, string actionName)
     {
         if(!PlayerIsRegistered(playerObject)) { return REGISTER_STATUS.FAIL; }
         var perPlayerAction = GetAttachedAction(playerObject);
         if (perPlayerAction == null) { return REGISTER_STATUS.FAIL; }
 
-        perPlayerAction.SetAction(action);
+        perPlayerAction.SetAction(action, actionName);
         return REGISTER_STATUS.SUCCESS;
     }
-    public REGISTER_STATUS RegisterAction(int playerID, Func<T, bool> action)
+    public REGISTER_STATUS RegisterAction(int playerID, Func<T, bool> action, string actionName)
     {
         if (!PlayerIsRegistered(playerID)) { return REGISTER_STATUS.FAIL; }
         var perPlayerAction = GetAttachedAction(playerID);
         if (perPlayerAction == null) { return REGISTER_STATUS.FAIL; }
 
-        perPlayerAction.SetAction(action);
+        perPlayerAction.SetAction(action, actionName);
         return REGISTER_STATUS.SUCCESS;
     }
 #if DEBUG
@@ -146,7 +141,7 @@ public class TurnController<T> where T : class
     {
         public Turn(int index)
         {
-            m_ExecutedActions = new List<AttachedAction>();
+            m_ExecutedActionsInfo = new List<AttachedAction.AttachedActionInfo>();
             m_Index = index;
         }
         ~Turn()
@@ -154,14 +149,14 @@ public class TurnController<T> where T : class
         }
         public void RegisterAction(AttachedAction action)
         {
-            m_ExecutedActions.Add(action);
+            m_ExecutedActionsInfo.Add(action.GetInfo());
         }
         public override string ToString()
         {
             string result = $"*** TURN {m_Index} ***\n";
-            for(int i = 0; i < m_ExecutedActions.Count; i++)
+            for(int i = 0; i < m_ExecutedActionsInfo.Count; i++)
             {
-                var action = m_ExecutedActions[i];
+                var action = m_ExecutedActionsInfo[i];
                 result += $"{action.ToString()}\n";
             }
             return result;
@@ -169,7 +164,7 @@ public class TurnController<T> where T : class
 
         public int Index { get { return m_Index; } }
 
-        private List<AttachedAction> m_ExecutedActions;
+        private List<AttachedAction.AttachedActionInfo> m_ExecutedActionsInfo;
         private int m_Index;
     }
 
@@ -181,12 +176,12 @@ public class TurnController<T> where T : class
             FAILED,
             PENDING
         }
-        public AttachedAction(Player player, Func<T, bool> action)
+        public AttachedAction(Player player, Func<T, bool> action, string actionName)
         {
             m_Player = player;
             m_Action = action;
             m_Status = STATUS.PENDING;
-
+            m_ActionName = actionName;
         }
         ~AttachedAction()
         {
@@ -197,21 +192,44 @@ public class TurnController<T> where T : class
             bool success = m_Action.Invoke(Player.Object);
             m_Status = success ? STATUS.SUCCESS : STATUS.FAILED;
         }
-        public void SetAction(Func<T, bool> action)
+        public void SetAction(Func<T, bool> action, string actionName)
         {
             m_Action = action;
+            m_ActionName = actionName;
             m_Status = STATUS.PENDING;
+        }
+        public AttachedActionInfo GetInfo()
+        {
+            return new AttachedActionInfo(m_Player.ToString(), m_ActionName, m_Status.ToString());
         }
         public Player Player { get { return m_Player; } }
         public Func<T, bool> Action { get { return m_Action; } }
         public STATUS Status { get { return m_Status; } }
         public override string ToString()
         {
-            return String.Format("Player: {0} - Action: {1} - Status: {2}", m_Player, m_Action.Method.Name, m_Status);
+            return String.Format("Player: {0} - Action: {1} - Status: {2}", m_Player, m_ActionName, m_Status);
         }
         private Player m_Player;
         private Func<T, bool> m_Action;
+        private string m_ActionName;
         private STATUS m_Status;
+
+        public struct AttachedActionInfo
+        {
+            public AttachedActionInfo(string playerName, string actionName, string status)
+            {
+                this.playerName = playerName;
+                this.actionName = actionName;
+                this.status = status;
+            }
+            public override string ToString()
+            {
+                return String.Format("Player: {0} - Action: {1} - Status: {2}", playerName, actionName, status);
+            }
+            public string playerName;
+            public string actionName;
+            public string status;
+        }
     }
 
     private class Player
