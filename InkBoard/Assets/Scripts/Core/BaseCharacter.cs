@@ -36,7 +36,7 @@ public class BaseCharacter : MonoBehaviour
         id = m_BaseData.id;
         SetGridPosition(m_BaseData.GridPosition);
         SetPosition(Board.Instance.GetWorldPositionAt(m_BaseData.GridPosition));
-        SetRotation(Quaternion.LookRotation(m_BaseData.Front, m_BaseData.Up));
+        SetRotation(m_BaseData.Front, m_BaseData.Up);
     }
     public virtual bool DefaultAction() 
     { 
@@ -56,9 +56,9 @@ public class BaseCharacter : MonoBehaviour
     {
         transform.position = worldPosition;
     }
-    protected void SetRotation(Quaternion rotation)
+    protected void SetRotation(Vector3Int forward, Vector3Int up)
     {
-        transform.rotation = rotation;
+        transform.rotation = Quaternion.LookRotation(forward, up);
     }
     [System.Serializable]
     public class BaseCharacterData : IPersistentData

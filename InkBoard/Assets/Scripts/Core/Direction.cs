@@ -52,6 +52,10 @@ public class Direction
     {
         return Directions[index];
     }
+    public static Direction GetDirection(Vector3Int vec)
+    {
+        return System.Array.Find(Directions, (x)=> x.m_Vector == vec);
+    }
     public static implicit operator Vector3Int(Direction dir) { return dir.m_Vector; }
     public static implicit operator Vector3(Direction dir) { return dir.m_Vector; }
     private Vector3Int m_Vector;

@@ -1,13 +1,18 @@
 using UnityEngine;
+using System.Collections;
 
 public class CubeCharacter : BaseCharacter
 {
+    public float SecondsPerRoll { get { return secondsPerRoll; } }
+    [SerializeField] private float secondsPerRoll;
+
+    private Vector3Int[] m_Orientation;
     private CubeMovement m_Movement;
     private CubeData m_CubeData;
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.A))
+        if (Input.GetKeyDown(KeyCode.A))
         {
             GetAndSetMovement(GridPosition, GridPosition + Direction.Left);
             GameManager.Instance.RegisterAction(this, (x) =>
@@ -58,6 +63,8 @@ public class CubeCharacter : BaseCharacter
         // Cube specific
         Debug.Log("CubeCharacter: Init");
         m_CubeData = data as CubeData;
+        m_Orientation = new Vector3Int[3];
+        SetOrientation(m_CubeData.Right, m_CubeData.Up, m_CubeData.Front);
         m_Movement = new CubeMovement(this);
     }
     public override bool DefaultAction()
@@ -71,7 +78,12 @@ public class CubeCharacter : BaseCharacter
         GameManager.Instance.Request(m_Movement);
         return true;
     }
-    
+    public void SetOrientation(Vector3Int right, Vector3Int up, Vector3Int forward)
+    {
+        m_Orientation[0] = right;
+        m_Orientation[1] = up;
+        m_Orientation[2] = forward;
+    }
     private Movement GetAndSetMovement(Vector3Int from, Vector3Int to)
     {
         if(m_Movement == null) { Debug.LogError("Movement is not initialized!", this); }
@@ -92,17 +104,14 @@ public class CubeCharacter : BaseCharacter
             m_Cube = cube;
             m_From = from;
             m_To = to;
-
         }
         ~CubeMovement()
         {
         }
         public override bool Execute()
         {
-            m_Cube.SetGridPosition(m_To);
-            // Lerp position
-            m_Cube.SetPosition(Board.Instance.GetWorldPositionAt(m_To));
-            // Lerp rotation
+            if(m_Coroutine != null) { m_Cube.StopCoroutine(m_Coroutine); }
+            m_Coroutine = m_Cube.StartCoroutine(RollCoroutine());
             return true;
         }
         public override bool IsValid()
@@ -115,11 +124,36 @@ public class CubeCharacter : BaseCharacter
             m_From = from;
             m_To = to;
         }
+        private IEnumerator RollCoroutine()
+        {
+            var dir = Direction.GetDirection(m_To - m_From);
+            var axis = Vector3.Cross(Direction.Up, dir);
+            var anchor = ((Board.Instance.GetWorldPositionAt(m_From) + Board.Instance.GetWorldPositionAt(m_To)) / 2) + (Vector3)Direction.Down * 0.5f;
+            float timer = 0;
+            while(timer < m_Cube.SecondsPerRoll)
+            {
+                yield return null;
+                m_Cube.transform.RotateAround(anchor, axis, 90f * Time.deltaTime / m_Cube.SecondsPerRoll);
+                timer += Time.deltaTime;
+            }
+
+            m_Cube.SetGridPosition(m_To);
+            m_Cube.SetPosition(Board.Instance.GetWorldPositionAt(m_To));
+
+            Quaternion rotation = Quaternion.AngleAxis(90f, axis);
+            Vector3Int right = Vector3Int.RoundToInt(rotation * m_Cube.m_Orientation[0]);
+            Vector3Int up = Vector3Int.RoundToInt(rotation * m_Cube.m_Orientation[1]);
+            Vector3Int forward = Vector3Int.RoundToInt(rotation * m_Cube.m_Orientation[2]);
+            m_Cube.SetRotation(forward, up);
+            m_Cube.SetOrientation(right, up, forward);
+        }
+
         public Vector3Int From { get { return m_From; } }
         public Vector3Int To { get { return m_To; } }
 
         private Vector3Int m_From;
         private Vector3Int m_To;
+        private Coroutine m_Coroutine;
         private CubeCharacter m_Cube;
     }
 
