@@ -16,11 +16,15 @@ public class TrackManager : MonoBehaviour
         m_Tracks = new List<Track>();
         m_CurrentTrack = null;
 
-        string[] paths = Directory.GetFiles(Application.streamingAssetsPath, "*.midi");
+        string[] midFilePaths = Directory.GetFiles(Application.streamingAssetsPath, "*.mid");
+        string[] midiFilePaths = Directory.GetFiles(Application.streamingAssetsPath, "*.midi");
+        List<string> paths = new List<string>();
+        paths.AddRange(midFilePaths);
+        paths.AddRange(midiFilePaths);
         foreach (string path in paths)
         {
             string fileName = Path.GetFileName(path);
-            RegisterTrack(path, fileName);
+            RegisterTrack(path, fileName.Split('.')[0]);
         }
         DebugLog();
     }
