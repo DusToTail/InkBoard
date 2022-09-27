@@ -62,7 +62,7 @@ MonoBehaviour:
   manager: {fileID: 0}
   id: 0
   gridPosition: {x: 0, y: 0, z: 0}
-  secondsPerRoll: 1
+  secondsPerRoll: 0.2
 --- !u!1 &5445590054058616481
 GameObject:
   m_ObjectHideFlags: 0
