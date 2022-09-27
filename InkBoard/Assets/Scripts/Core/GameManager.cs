@@ -4,7 +4,8 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
-
+    [SerializeField] private TrackManager trackManager;
+    [SerializeField] private RythmController rythmController;
     private TurnController<BaseCharacter> m_TurnController;
     private RequestHandler<Movement> m_MovementHandler;
 
@@ -14,10 +15,6 @@ public class GameManager : MonoBehaviour
             Instance = this;
         else
             Destroy(this);
-    }
-    private void Start()
-    {
-        Init();
     }
     public void Init()
     {
@@ -42,6 +39,8 @@ public class GameManager : MonoBehaviour
         example.SetValue(cubeData, 0);
         string concat = string.Join('\n',example);
         CharacterManager.Instance.Init(concat);
+
+        trackManager.Init();
     }
     public void ProcessTurn()
     {
