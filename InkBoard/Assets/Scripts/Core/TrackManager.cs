@@ -31,6 +31,7 @@ public class TrackManager : MonoBehaviour
             string trackName = fileName.Split('.')[0];
             RegisterTrack(path, trackName, System.Array.Find(m_AudioSources, (x) => x.clip.name == trackName));
         }
+        SetCurrentTrack("default");
     }
     public bool SetCurrentTrack(string trackName)
     {
@@ -86,7 +87,7 @@ public class Track
         m_Name = trackName;
         m_Beats = new List<Beat>();
         m_BeatIndex = 0;
-        m_CurrentTimeStampInMilliSeconds = 0;
+        m_PlaybackTimeStampInMilliSeconds = 0;
         m_DurationInMilliSeconds = 0;
         m_AudioSource = source;
     }
@@ -114,14 +115,19 @@ public class Track
         }
         return true;
     }
+    public Beat GetBeat(int index)
+    {
+        if(index < 0 || index >= m_Beats.Count) { return null; }
+        return m_Beats[index];
+    }
     public void Reset()
     {
         m_BeatIndex = 0;
-        m_CurrentTimeStampInMilliSeconds = 0;
+        m_PlaybackTimeStampInMilliSeconds = 0;
     }
     public void SetCurrentTimeStamp(double time)
     {
-        m_CurrentTimeStampInMilliSeconds = time;
+        m_PlaybackTimeStampInMilliSeconds = time;
     }
     public void IncrementBeatIndex()
     {
@@ -146,13 +152,13 @@ public class Track
     }
     public string Name { get { return m_Name; } }
     public double DurationInMilliSeconds { get { return m_DurationInMilliSeconds; } }
-    public double CurrentTimeStampInMilliSeconds { get { return m_CurrentTimeStampInMilliSeconds; } }
-    public Beat CurrentBeat { get { return m_Beats[m_BeatIndex]; } }
-    public Beat PreviousBeat { get { return m_BeatIndex > 0 ? null : m_Beats[m_BeatIndex - 1]; } }
-    public bool IsFinished { get { return m_CurrentTimeStampInMilliSeconds >= m_DurationInMilliSeconds; } }
+    public double PlaybackTimeStampInMilliSeconds { get { return m_PlaybackTimeStampInMilliSeconds; } }
+    public Beat CurrentBeat { get { return m_BeatIndex > m_Beats.Count - 1 ? m_Beats[m_Beats.Count - 1] : m_Beats[m_BeatIndex]; } }
+    public Beat PreviousBeat { get { return m_BeatIndex < 1 ? null : m_Beats[m_BeatIndex - 1]; } }
+    public bool IsFinished { get { return m_PlaybackTimeStampInMilliSeconds >= m_DurationInMilliSeconds; } }
     public AudioSource Source { get { return m_AudioSource; } }
 
-    private double m_CurrentTimeStampInMilliSeconds;
+    private double m_PlaybackTimeStampInMilliSeconds;
     private List<Beat> m_Beats;
     private int m_BeatIndex;
     private string m_Name;
@@ -186,6 +192,7 @@ public class Beat
     public double TimeStampInMilliseconds { get { return m_TimeStampInMilliseconds; } }
     public double DurationInMilliseconds { get { return m_DurationInMilliseconds; } }
     public int Index { get { return m_Index; } }
+
     private double m_TimeStampInMilliseconds;
     private double m_DurationInMilliseconds;
     private int m_Index;

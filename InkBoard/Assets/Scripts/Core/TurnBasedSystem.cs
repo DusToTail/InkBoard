@@ -11,6 +11,7 @@ public class TurnController<T> where T : class
     }
     public enum DEBUG_INFO : int
     {
+        CURRENT_TURN,
         TURNS,
         ACTIONS,
         PLAYERS
@@ -44,7 +45,7 @@ public class TurnController<T> where T : class
     public REGISTER_STATUS RegisterPlayer(T playerObject, Func<T, bool> action, string actionName)
     {
         if (PlayerIsRegistered(playerObject)) { return REGISTER_STATUS.FAIL; }
-        Player newPlayer = new Player(m_PlayerIDCount++, playerObject);
+        Player newPlayer = new Player(m_PlayerIDCount++, playerObject, action, actionName);
         var attachedTurn = new AttachedAction(newPlayer, action, actionName);
 
         m_Players.Add(newPlayer);
@@ -69,11 +70,24 @@ public class TurnController<T> where T : class
         perPlayerAction.SetAction(action, actionName);
         return REGISTER_STATUS.SUCCESS;
     }
+    public void ResetToDefaultActions()
+    {
+        foreach(var action in m_AttachedActions)
+        {
+            action.SetAction(action.Player.DefaultAction, action.Player.DefaultActionName);
+        }
+    }
 #if DEBUG
     public void DebugLog(DEBUG_INFO info)
     {
         switch(info)
         {
+            case DEBUG_INFO.CURRENT_TURN:
+                {
+                    Debug.Log("**********CURRENT TURN**********");
+                    Debug.Log(m_Turns[m_TurnIndex - 1].ToString());
+                    break;
+                }
             case DEBUG_INFO.TURNS:
                 {
                     Debug.Log("**********TURNS REGISTERED**********");
@@ -234,10 +248,12 @@ public class TurnController<T> where T : class
 
     private class Player
     {
-        public Player(int id, T player)
+        public Player(int id, T player, Func<T, bool> defaultAction, string defaultActionName)
         {
             m_ID = id;
             m_Object = player;
+            m_DefaultAction = defaultAction;
+            m_DefaultActionName = defaultActionName;
         }
         ~Player()
         {
@@ -248,9 +264,13 @@ public class TurnController<T> where T : class
         }
         public int ID { get { return m_ID; } }
         public T Object { get { return m_Object; } }
-
+        public Func<T, bool> DefaultAction { get { return m_DefaultAction; } }
+        public string DefaultActionName { get { return m_DefaultActionName; } }
+        
         private int m_ID;
         private T m_Object;
+        private Func<T, bool> m_DefaultAction;
+        private string m_DefaultActionName;
     }
 }
 

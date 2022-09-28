@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BaseCharacter : MonoBehaviour
@@ -16,6 +16,7 @@ public class BaseCharacter : MonoBehaviour
 
     [SerializeField] protected int id;
     [SerializeField] protected Vector3Int gridPosition;
+    protected List<InputCommand> m_InputCommand;
     private BaseCharacterData m_BaseData;
 
     public BaseCharacter()
@@ -38,14 +39,37 @@ public class BaseCharacter : MonoBehaviour
         SetPosition(Board.Instance.GetWorldPositionAt(m_BaseData.GridPosition));
         SetRotation(m_BaseData.Front, m_BaseData.Up);
     }
+    public virtual void SetInputCommand()
+    {
+        m_InputCommand = new List<InputCommand>();
+        m_InputCommand.Add(new InputCommand(KeyCode.None, Default));
+
+        bool Default(object character)
+        {
+            return (character as BaseCharacter).DefaultAction();
+        }
+    }
+    public bool ExecuteCommand(KeyCode keyCode)
+    {
+        var inputCommand = m_InputCommand.Find(x => x.KeyCode == keyCode);
+        if(inputCommand != null)
+        {
+            inputCommand.Action.Invoke(this);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
     public virtual bool DefaultAction() 
     { 
-        Debug.Log("BaseCharacter: DefaultAction");
+        //Debug.Log("BaseCharacter: DefaultAction");
         return true; 
     }
     public virtual bool SendMoveRequest()
     {
-        Debug.Log("BaseCharacter: SendMoveRequest");
+        //Debug.Log("BaseCharacter: SendMoveRequest");
         return true;
     }
     protected void SetGridPosition(Vector3Int gridPosition)

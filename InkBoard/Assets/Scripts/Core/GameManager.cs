@@ -4,11 +4,31 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+
+    public Beat CurrentBeat { get; private set; }
+    public Beat PreviousBeat { get; private set; }
+    public float ActualDurationOfCurrentBeat { get { return (float)CurrentBeat.DurationInMilliseconds / (rythmController.PlaybackSpeed * 1000); } }
+    public float ActualDurationOfPreviousBeat { get { return (float)PreviousBeat.DurationInMilliseconds / (rythmController.PlaybackSpeed * 1000); } }
+
+    public RythmController RythmController { get { return rythmController; } }
+    public TrackManager TrackManager { get { return trackManager; } }
+    public TurnController<BaseCharacter> TurnController { get { return m_TurnController; } }
+    public RequestHandler<Movement> MovementHandler { get { return m_MovementHandler; } }
+
     [SerializeField] private TrackManager trackManager;
     [SerializeField] private RythmController rythmController;
+    [SerializeField] private PlayerController playerController;
     private TurnController<BaseCharacter> m_TurnController;
     private RequestHandler<Movement> m_MovementHandler;
 
+    private void OnEnable()
+    {
+        rythmController.OnBeatPlayed += ProcessTurn;
+    }
+    private void OnDisable()
+    {
+        rythmController.OnBeatPlayed -= ProcessTurn;
+    }
     private void Awake()
     {
         if (Instance == null)
@@ -39,17 +59,26 @@ public class GameManager : MonoBehaviour
         example.SetValue(cubeData, 0);
         string concat = string.Join('\n',example);
         CharacterManager.Instance.Init(concat);
-
+        playerController.Init(CharacterManager.Instance.GetCharacter(0));
         trackManager.Init();
     }
-    public void ProcessTurn()
+    public void ProcessTurn(Beat current)
     {
+        var track = trackManager.CurrentTrack;
+        CurrentBeat = current;
+        PreviousBeat = track.GetBeat(CurrentBeat.Index - 1);
+
         // Each turn will contain a list of <Player, Action> values. There are no duplicates
         // Each action here will be a request to the corresponding RequestHandler to make changes
         m_TurnController.ProcessTurn();
-        m_TurnController.DebugLog(TurnController<BaseCharacter>.DEBUG_INFO.TURNS);
         // Process requests after the request list has been populated in TurnController
         ProcessRequests<Movement>();
+
+#if DEBUG
+        m_TurnController.DebugLog(TurnController<BaseCharacter>.DEBUG_INFO.CURRENT_TURN);
+#endif
+
+        m_TurnController.ResetToDefaultActions();
     }
     public void RegisterPlayer<T>(T playerObject, Func<T, bool> playerDefaultAction, string actionName) where T : BaseCharacter
     {
@@ -71,11 +100,21 @@ public class GameManager : MonoBehaviour
     }
     public void RegisterAction<T>(T playerObject, Func<T, bool> action, string actionName) where T : BaseCharacter
     {
-        m_TurnController.RegisterAction(playerObject, (x)=>
+        var status = m_TurnController.RegisterAction(playerObject, (x)=>
         {
             return action.Invoke(x as T);
         },
         actionName);
+        if (status == TurnController<BaseCharacter>.REGISTER_STATUS.FAIL)
+        {
+            Debug.Log("Action Registration: FAIL", this);
+            Debug.Log($"{playerObject.gameObject}", playerObject);
+        }
+        else if (status == TurnController<BaseCharacter>.REGISTER_STATUS.SUCCESS)
+        {
+            Debug.Log("Action Registration: SUCCESS", this);
+            Debug.Log($"{playerObject.gameObject}", playerObject);
+        }
     }
     public void Request<T>(T change) where T : Change
     {

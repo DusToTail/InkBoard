@@ -121,7 +121,11 @@ public class Board : MonoBehaviour
         Vector3 localPosition = (Vector3)gridPosition * betweenDistance;
         m_BlockInitIndex++;
         var prefab = GetBlockFromID(m_Data == null ? 0 : m_Data.blockIDs[m_BlockInitIndex]);
-        if (prefab == null) { Debug.Log($"Board: {cell} Empty"); return; }
+        if (prefab == null) 
+        { 
+            //Debug.Log($"Board: {cell} Empty"); 
+            return; 
+        }
 
         Vector3 worldPosition = transform.position + localPosition;
         var blockObj = Instantiate(prefab, worldPosition, Quaternion.identity, transform);
@@ -129,7 +133,7 @@ public class Board : MonoBehaviour
         block.Init();
         cell.SetValue(block);
 
-        Debug.Log($"Board: {cell} {block.ID}");
+        //Debug.Log($"Board: {cell} {block.ID}");
     }
     private GameObject GetBlockFromID(int id)
     {

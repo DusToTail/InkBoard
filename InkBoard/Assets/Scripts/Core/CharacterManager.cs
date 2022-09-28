@@ -41,7 +41,6 @@ public class CharacterManager : MonoBehaviour
         //m_Grid.DebugLog();
 #endif
     }
-    
     public string SerializeData()
     {
         List<string> characters = new List<string>();
@@ -80,18 +79,33 @@ public class CharacterManager : MonoBehaviour
             }
         }
     }
+    public BaseCharacter GetCharacter(int id)
+    {
+        var cell = System.Array.Find(m_Grid.GetArray(), x => x.Value != null && x.Value.ID == id);
+        if(cell == null) { return null; }
+        return cell.Value;
+    }
+    public BaseCharacter GetCharacter(Vector3Int gridPosition)
+    {
+        return m_Grid.GetValueAt(new GridPosition(gridPosition));
+    }
     private void CreateCharacterAtCell(Cell<BaseCharacter> cell)
     {
-        Debug.Log("Character at " + cell.GridPosition);
+        //Debug.Log("Character at " + cell.GridPosition);
         m_CharacterInitIndex++;
         var data = m_Datas[m_CharacterInitIndex];
         if(data == null) { Debug.LogError("Data is null!"); return; }
-        var prefab = GetCharacterFromID(data.id);
-        if(prefab == null) { Debug.Log($"CharacterManager: {cell} Empty"); return; }
+        var prefab = GetCharacterPrefabFromID(data.id);
+        if(prefab == null) 
+        {
+            //Debug.Log($"CharacterManager: {cell} Empty"); 
+            return; 
+        }
 
         var characterObj = Instantiate(prefab, transform);
         var character = characterObj.GetComponent<BaseCharacter>();
         character.Init(data);
+        character.SetInputCommand();
         character.manager = this;
         cell.SetValue(character);
         GameManager.Instance.RegisterPlayer(character, (x) =>
@@ -99,7 +113,7 @@ public class CharacterManager : MonoBehaviour
             return x.DefaultAction();
         },
         "Default Action");
-        Debug.Log($"CharacterManager: {cell} {character.ID}");
+        //Debug.Log($"CharacterManager: {cell} {character.ID}");
     }
     private void AddCharacter(BaseCharacter character)
     {
@@ -111,7 +125,7 @@ public class CharacterManager : MonoBehaviour
         GridPosition gridPosition = new GridPosition(character.GridPosition);
         m_Grid.SetValueAt(gridPosition, null);
     }
-    private GameObject GetCharacterFromID(int id)
+    private GameObject GetCharacterPrefabFromID(int id)
     {
         if (id == -1) { return null; }
         return System.Array.Find(prefabs, x => x.GetComponent<BaseCharacter>().ID == id);

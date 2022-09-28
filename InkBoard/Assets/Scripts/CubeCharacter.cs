@@ -1,47 +1,16 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class CubeCharacter : BaseCharacter
 {
-    public float SecondsPerRoll { get { return secondsPerRoll; } }
-    [SerializeField] private float secondsPerRoll;
+    public float NormalizedRollTime { get { return normalizedRollTime;  } }
+    [Range(0f, 1f)]
+    [SerializeField] private float normalizedRollTime;
 
     private Vector3Int[] m_Orientation;
     private CubeMovement m_Movement;
     private CubeData m_CubeData;
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            GetAndSetMovement(GridPosition, GridPosition + Direction.Left);
-            GameManager.Instance.RegisterAction(this, Move, "Move Left");
-            GameManager.Instance.ProcessTurn();
-        }
-        else if(Input.GetKeyDown(KeyCode.D))
-        {
-            GetAndSetMovement(GridPosition, GridPosition + Direction.Right);
-            GameManager.Instance.RegisterAction(this, Move, "Move Right");
-            GameManager.Instance.ProcessTurn();
-        }
-        else if(Input.GetKeyDown(KeyCode.W))
-        {
-            GetAndSetMovement(GridPosition, GridPosition + Direction.Front);
-            GameManager.Instance.RegisterAction(this, Move, "Move Forward");
-            GameManager.Instance.ProcessTurn();
-        }
-        else if (Input.GetKeyDown(KeyCode.S))
-        {
-            GetAndSetMovement(GridPosition, GridPosition + Direction.Back);
-            GameManager.Instance.RegisterAction(this, Move, "Move Back");
-            GameManager.Instance.ProcessTurn();
-        }
-
-        bool Move(CubeCharacter cube)
-        {
-            return cube.SendMoveRequest();
-        }
-    }
 
     public override void Init(object data)
     {
@@ -60,14 +29,57 @@ public class CubeCharacter : BaseCharacter
         SetOrientation(m_CubeData.Right, m_CubeData.Up, m_CubeData.Front);
         m_Movement = new CubeMovement(this);
     }
+    public override void SetInputCommand()
+    {
+        m_InputCommand = new List<InputCommand>();
+        m_InputCommand.Add(new InputCommand(KeyCode.None, Default));
+        m_InputCommand.Add(new InputCommand(KeyCode.A, MoveLeft));
+        m_InputCommand.Add(new InputCommand(KeyCode.D, MoveRight));
+        m_InputCommand.Add(new InputCommand(KeyCode.W, MoveForward));
+        m_InputCommand.Add(new InputCommand(KeyCode.S, MoveBackward));
+
+
+        bool Default(object character)
+        {
+            return (character as CubeCharacter).DefaultAction();
+        }
+        bool MoveLeft(object character)
+        {
+            GetAndSetMovement(GridPosition, GridPosition + Direction.Left);
+            GameManager.Instance.RegisterAction(this, SendMove, "Move Left");
+            return true;
+        }
+        bool MoveRight(object character)
+        {
+            GetAndSetMovement(GridPosition, GridPosition + Direction.Right);
+            GameManager.Instance.RegisterAction(this, SendMove, "Move Right");
+            return true;
+        }
+        bool MoveForward(object character)
+        {
+            GetAndSetMovement(GridPosition, GridPosition + Direction.Front);
+            GameManager.Instance.RegisterAction(this, SendMove, "Move Forward");
+            return true;
+        }
+        bool MoveBackward(object character)
+        {
+            GetAndSetMovement(GridPosition, GridPosition + Direction.Back);
+            GameManager.Instance.RegisterAction(this, SendMove, "Move Backward");
+            return true;
+        }
+        bool SendMove(CubeCharacter cube)
+        {
+            return cube.SendMoveRequest();
+        }
+    }
     public override bool DefaultAction()
     {
-        Debug.Log("CubeCharacter: DefaultAction");
+        //Debug.Log("CubeCharacter: DefaultAction");
         return true;
     }
     public override bool SendMoveRequest()
     {
-        Debug.Log("CubeCharacter: SendMoveRequest");
+        //Debug.Log("CubeCharacter: SendMoveRequest");
         GameManager.Instance.Request(m_Movement);
         return true;
     }
@@ -123,13 +135,13 @@ public class CubeCharacter : BaseCharacter
             var axis = Vector3.Cross(Direction.Up, dir);
             var anchor = ((Board.Instance.GetWorldPositionAt(m_From) + Board.Instance.GetWorldPositionAt(m_To)) / 2) + (Vector3)Direction.Down * 0.5f;
             float timer = 0;
-            while(timer < m_Cube.SecondsPerRoll)
+            var rollTime = m_Cube.NormalizedRollTime * GameManager.Instance.ActualDurationOfCurrentBeat;
+            while (timer < rollTime)
             {
                 yield return null;
-                m_Cube.transform.RotateAround(anchor, axis, 90f * Time.deltaTime / m_Cube.SecondsPerRoll);
+                m_Cube.transform.RotateAround(anchor, axis, 90f * Time.deltaTime / (float)rollTime);
                 timer += Time.deltaTime;
             }
-
             m_Cube.SetGridPosition(m_To);
             m_Cube.SetPosition(Board.Instance.GetWorldPositionAt(m_To));
 

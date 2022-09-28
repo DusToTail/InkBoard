@@ -3,8 +3,11 @@ using UnityEngine;
 
 public class RythmController : MonoBehaviour
 {
-    public delegate void BeatPlayed(Beat beat);
-    public static event BeatPlayed OnBeatPlayed;
+    public delegate void BeatPlayed(Beat current);
+    public event BeatPlayed OnBeatPlayed;
+
+    public float PlaybackTimeStamp { get { return m_PlaybackTimeStamp; } }
+    public float PlaybackSpeed { get { return playbackSpeed; } }
 
     public bool IsPlaying { get { return m_IsPlaying; } }
     [SerializeField] private TrackManager trackManager;
@@ -12,7 +15,7 @@ public class RythmController : MonoBehaviour
     [SerializeField] private bool isLooped;
 
     private bool m_IsPlaying = false;
-
+    private float m_PlaybackTimeStamp = 0;
     private Coroutine m_PlaybackCoroutine;
 
     public void StartPlay()
@@ -63,18 +66,19 @@ public class RythmController : MonoBehaviour
         track.Source.pitch = playbackSpeed;
         track.Source.Play();
         double timer = Time.timeAsDouble;
+        m_PlaybackTimeStamp = (float)timer;
         while (!track.IsFinished)
         {
-            yield return null;
-            var deltaTimeAsDoubleInSeconds = Time.timeAsDouble - timer;
-            timer += deltaTimeAsDoubleInSeconds;
-            track.SetCurrentTimeStamp(track.CurrentTimeStampInMilliSeconds + (deltaTimeAsDoubleInSeconds * 1000) * playbackSpeed);
-            if (track.CurrentTimeStampInMilliSeconds >= track.CurrentBeat.TimeStampInMilliseconds + track.CurrentBeat.DurationInMilliseconds)
-            {
-                track.IncrementBeatIndex();
-                if(OnBeatPlayed != null)
-                    OnBeatPlayed(track.CurrentBeat);
-            }
+            var beatDurationInSeconds = track.CurrentBeat.DurationInMilliseconds / (playbackSpeed * 1000);
+
+            if(track.CurrentBeat == track.PreviousBeat) { yield break; }
+                
+            if (OnBeatPlayed != null)
+                OnBeatPlayed(track.CurrentBeat);
+
+            yield return new WaitForSeconds((float)beatDurationInSeconds);
+            track.SetCurrentTimeStamp(track.PlaybackTimeStampInMilliSeconds + track.CurrentBeat.DurationInMilliseconds / playbackSpeed);
+            track.IncrementBeatIndex();
         }
         track.Source.Stop();
 
