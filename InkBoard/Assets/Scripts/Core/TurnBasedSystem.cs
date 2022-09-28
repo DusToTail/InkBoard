@@ -84,13 +84,11 @@ public class TurnController<T> where T : class
         {
             case DEBUG_INFO.CURRENT_TURN:
                 {
-                    Debug.Log("**********CURRENT TURN**********");
                     Debug.Log(m_Turns[m_TurnIndex - 1].ToString());
                     break;
                 }
             case DEBUG_INFO.TURNS:
                 {
-                    Debug.Log("**********TURNS REGISTERED**********");
                     for (int i = 0; i < m_Turns.Count; i++)
                     {
                         Debug.Log(m_Turns[i].ToString());
@@ -99,7 +97,6 @@ public class TurnController<T> where T : class
                 }
             case DEBUG_INFO.ACTIONS:
                 {
-                    Debug.Log("**********ACTIONS REGISTERED**********");
                     for (int i = 0; i < m_AttachedActions.Count; i++)
                     {
                         Debug.Log(m_AttachedActions[i].ToString());
@@ -108,7 +105,6 @@ public class TurnController<T> where T : class
                 }
             case DEBUG_INFO.PLAYERS:
                 {
-                    Debug.Log("**********PLAYERS REGISTERED**********");
                     for (int i = 0; i < m_Players.Count; i++)
                     {
                         Debug.Log(m_Players[i].ToString());

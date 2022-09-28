@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -7,6 +8,12 @@ public class GameManager : MonoBehaviour
 
     public Beat CurrentBeat { get; private set; }
     public Beat PreviousBeat { get; private set; }
+
+    public float InputDuration { get; private set; }
+    public float CalculationDuration { get; private set; }
+    public float ExecutionDuration { get; private set; }
+    public float CleanDuration { get; private set; }
+
     public float ActualDurationOfCurrentBeat { get { return (float)CurrentBeat.DurationInMilliseconds / (rythmController.PlaybackSpeed * 1000); } }
     public float ActualDurationOfPreviousBeat { get { return (float)PreviousBeat.DurationInMilliseconds / (rythmController.PlaybackSpeed * 1000); } }
 
@@ -20,6 +27,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private PlayerController playerController;
     private TurnController<BaseCharacter> m_TurnController;
     private RequestHandler<Movement> m_MovementHandler;
+
+    private Coroutine m_TurnCoroutine;
 
     private void OnEnable()
     {
@@ -62,24 +71,6 @@ public class GameManager : MonoBehaviour
         playerController.Init(CharacterManager.Instance.GetCharacter(0));
         trackManager.Init();
     }
-    public void ProcessTurn(Beat current)
-    {
-        var track = trackManager.CurrentTrack;
-        CurrentBeat = current;
-        PreviousBeat = track.GetBeat(CurrentBeat.Index - 1);
-
-        // Each turn will contain a list of <Player, Action> values. There are no duplicates
-        // Each action here will be a request to the corresponding RequestHandler to make changes
-        m_TurnController.ProcessTurn();
-        // Process requests after the request list has been populated in TurnController
-        ProcessRequests<Movement>();
-
-#if DEBUG
-        m_TurnController.DebugLog(TurnController<BaseCharacter>.DEBUG_INFO.CURRENT_TURN);
-#endif
-
-        m_TurnController.ResetToDefaultActions();
-    }
     public void RegisterPlayer<T>(T playerObject, Func<T, bool> playerDefaultAction, string actionName) where T : BaseCharacter
     {
         var status = m_TurnController.RegisterPlayer(playerObject, (x) =>
@@ -105,16 +96,6 @@ public class GameManager : MonoBehaviour
             return action.Invoke(x as T);
         },
         actionName);
-        if (status == TurnController<BaseCharacter>.REGISTER_STATUS.FAIL)
-        {
-            Debug.Log("Action Registration: FAIL", this);
-            Debug.Log($"{playerObject.gameObject}", playerObject);
-        }
-        else if (status == TurnController<BaseCharacter>.REGISTER_STATUS.SUCCESS)
-        {
-            Debug.Log("Action Registration: SUCCESS", this);
-            Debug.Log($"{playerObject.gameObject}", playerObject);
-        }
     }
     public void Request<T>(T change) where T : Change
     {
@@ -142,6 +123,50 @@ public class GameManager : MonoBehaviour
             var moveValidCheck = validCheck as Func<Movement, bool>;
             m_MovementHandler.StackNewRequestAt(target, moveAction, moveValidCheck);
         }
+    }
+    public void ProcessTurn(Beat current)
+    {
+        var track = trackManager.CurrentTrack;
+        CurrentBeat = current;
+        PreviousBeat = track.GetBeat(CurrentBeat.Index - 1);
+
+        if (m_TurnCoroutine != null)
+            StopCoroutine(m_TurnCoroutine);
+        m_TurnCoroutine = StartCoroutine(ProcessTurnCoroutine());
+    }
+    private IEnumerator ProcessTurnCoroutine()
+    {
+        var beatLayout = rythmController.BeatLayout;
+
+        InputDuration = beatLayout.GetNormalizedDuration("Input") * ActualDurationOfCurrentBeat;
+        // Allow input until the end of the duration
+        playerController.CanControl = true;
+        playerController.StartInputEvaluation();
+        yield return new WaitForSeconds(InputDuration);
+        playerController.StopInputEvaluation();
+        playerController.CanControl = false;
+
+
+        CalculationDuration = beatLayout.GetNormalizedDuration("Calculation") * ActualDurationOfCurrentBeat;
+        // Each turn will contain a list of <Player, Action> values. There are no duplicates
+        // Each action here will be a request to the corresponding RequestHandler to make changes
+        m_TurnController.ProcessTurn();
+        yield return new WaitForSeconds(CalculationDuration);
+
+
+        ExecutionDuration = beatLayout.GetNormalizedDuration("Execution") * ActualDurationOfCurrentBeat;
+        // Process requests after the request list has been populated in TurnController
+        ProcessRequests<Movement>();
+        yield return new WaitForSeconds(ExecutionDuration);
+
+
+        CleanDuration = beatLayout.GetNormalizedDuration("Clean") * ActualDurationOfCurrentBeat;
+#if DEBUG
+        m_TurnController.DebugLog(TurnController<BaseCharacter>.DEBUG_INFO.CURRENT_TURN);
+        Debug.Log(playerController.InputEvaluation);
+#endif
+        m_TurnController.ResetToDefaultActions();
+        yield return new WaitForSeconds(CleanDuration);
     }
     private void ProcessRequests<T>() where T : Change
     {

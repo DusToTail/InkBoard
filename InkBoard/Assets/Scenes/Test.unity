@@ -674,6 +674,7 @@ MonoBehaviour:
   trackManager: {fileID: 1600303466}
   playbackSpeed: 0.5
   isLooped: 0
+  normalizedDelay: 0.2
 --- !u!4 &1988914414
 Transform:
   m_ObjectHideFlags: 0

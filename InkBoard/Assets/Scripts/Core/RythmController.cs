@@ -8,15 +8,28 @@ public class RythmController : MonoBehaviour
 
     public float PlaybackTimeStamp { get { return m_PlaybackTimeStamp; } }
     public float PlaybackSpeed { get { return playbackSpeed; } }
+    public BeatLayout BeatLayout { get { return m_BeatLayout; } }
 
     public bool IsPlaying { get { return m_IsPlaying; } }
     [SerializeField] private TrackManager trackManager;
     [SerializeField] private float playbackSpeed;
     [SerializeField] private bool isLooped;
+    [Range(0f, 1f)]
+    [SerializeField] private float normalizedDelay;
 
     private bool m_IsPlaying = false;
     private float m_PlaybackTimeStamp = 0;
     private Coroutine m_PlaybackCoroutine;
+    private BeatLayout m_BeatLayout;
+
+    private void Start()
+    {
+        m_BeatLayout = new BeatLayout();
+        m_BeatLayout.PushBack("Input", 0.4f);
+        m_BeatLayout.PushBack("Calculation", 0.05f);
+        m_BeatLayout.PushBack("Execution", 0.5f);
+        m_BeatLayout.PushBack("Clean", 0.05f);
+    }
 
     public void StartPlay()
     {
@@ -31,11 +44,8 @@ public class RythmController : MonoBehaviour
     public void StopPlay()
     {
         m_IsPlaying = false;
-        if (m_PlaybackCoroutine != null)
-        {
-            StopCoroutine(m_PlaybackCoroutine);
-            m_PlaybackCoroutine = null;
-        }
+        StopAllCoroutines();
+        m_PlaybackCoroutine = null;
         var track = trackManager.CurrentTrack;
         track.Reset();
         track.Source.Stop();
@@ -62,9 +72,7 @@ public class RythmController : MonoBehaviour
     {
         var track = trackManager.CurrentTrack;
         track.Reset();
-        // How to set playback speed of track
-        track.Source.pitch = playbackSpeed;
-        track.Source.Play();
+        StartCoroutine(PlayTrackCoroutine(normalizedDelay * (float)track.CurrentBeat.DurationInMilliseconds / (playbackSpeed * 1000)));
         double timer = Time.timeAsDouble;
         m_PlaybackTimeStamp = (float)timer;
         while (!track.IsFinished)
@@ -77,13 +85,22 @@ public class RythmController : MonoBehaviour
                 OnBeatPlayed(track.CurrentBeat);
 
             yield return new WaitForSeconds((float)beatDurationInSeconds);
-            track.SetCurrentTimeStamp(track.PlaybackTimeStampInMilliSeconds + track.CurrentBeat.DurationInMilliseconds / playbackSpeed);
+            // playback speed is not applied here to preserve its internal data
+            track.SetCurrentTimeStamp(track.PlaybackTimeStampInMilliSeconds + track.CurrentBeat.DurationInMilliseconds);
             track.IncrementBeatIndex();
         }
-        track.Source.Stop();
 
         if (isLooped)
             StartPlay();
+    }
+    private IEnumerator PlayTrackCoroutine(float delayInSeconds)
+    {
+        yield return new WaitForSeconds(delayInSeconds);
+        var track = trackManager.CurrentTrack;
+        track.Source.pitch = playbackSpeed;
+        track.Source.Play();
+        yield return new WaitForSeconds((float)track.DurationInMilliSeconds / (playbackSpeed * 1000));
+        track.Source.Stop();
     }
 }
 

@@ -135,7 +135,7 @@ public class CubeCharacter : BaseCharacter
             var axis = Vector3.Cross(Direction.Up, dir);
             var anchor = ((Board.Instance.GetWorldPositionAt(m_From) + Board.Instance.GetWorldPositionAt(m_To)) / 2) + (Vector3)Direction.Down * 0.5f;
             float timer = 0;
-            var rollTime = m_Cube.NormalizedRollTime * GameManager.Instance.ActualDurationOfCurrentBeat;
+            var rollTime = m_Cube.NormalizedRollTime * GameManager.Instance.ExecutionDuration;
             while (timer < rollTime)
             {
                 yield return null;
