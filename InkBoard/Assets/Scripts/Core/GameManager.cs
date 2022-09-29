@@ -138,7 +138,7 @@ public class GameManager : MonoBehaviour
     {
         var beatLayout = rythmController.BeatLayout;
 
-        InputDuration = beatLayout.GetNormalizedDuration("Input") * ActualDurationOfCurrentBeat;
+        InputDuration = beatLayout.GetDuration("Input", false) * ActualDurationOfCurrentBeat;
         // Allow input until the end of the duration
         playerController.CanControl = true;
         playerController.StartInputEvaluation();
@@ -147,20 +147,20 @@ public class GameManager : MonoBehaviour
         playerController.CanControl = false;
 
 
-        CalculationDuration = beatLayout.GetNormalizedDuration("Calculation") * ActualDurationOfCurrentBeat;
+        CalculationDuration = beatLayout.GetDuration("Calculation", false) * ActualDurationOfCurrentBeat;
         // Each turn will contain a list of <Player, Action> values. There are no duplicates
         // Each action here will be a request to the corresponding RequestHandler to make changes
         m_TurnController.ProcessTurn();
         yield return new WaitForSeconds(CalculationDuration);
 
 
-        ExecutionDuration = beatLayout.GetNormalizedDuration("Execution") * ActualDurationOfCurrentBeat;
+        ExecutionDuration = beatLayout.GetDuration("Execution", false) * ActualDurationOfCurrentBeat;
         // Process requests after the request list has been populated in TurnController
         ProcessRequests<Movement>();
         yield return new WaitForSeconds(ExecutionDuration);
 
 
-        CleanDuration = beatLayout.GetNormalizedDuration("Clean") * ActualDurationOfCurrentBeat;
+        CleanDuration = beatLayout.GetDuration("Clean", false) * ActualDurationOfCurrentBeat;
 #if DEBUG
         m_TurnController.DebugLog(TurnController<BaseCharacter>.DEBUG_INFO.CURRENT_TURN);
         Debug.Log(playerController.InputEvaluation);

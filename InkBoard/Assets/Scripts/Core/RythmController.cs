@@ -8,9 +8,9 @@ public class RythmController : MonoBehaviour
 
     public float PlaybackTimeStamp { get { return m_PlaybackTimeStamp; } }
     public float PlaybackSpeed { get { return playbackSpeed; } }
-    public BeatLayout BeatLayout { get { return m_BeatLayout; } }
-
     public bool IsPlaying { get { return m_IsPlaying; } }
+    public TimeLayout BeatLayout { get; private set; }
+
     [SerializeField] private TrackManager trackManager;
     [SerializeField] private float playbackSpeed;
     [SerializeField] private bool isLooped;
@@ -20,15 +20,14 @@ public class RythmController : MonoBehaviour
     private bool m_IsPlaying = false;
     private float m_PlaybackTimeStamp = 0;
     private Coroutine m_PlaybackCoroutine;
-    private BeatLayout m_BeatLayout;
 
     private void Start()
     {
-        m_BeatLayout = new BeatLayout();
-        m_BeatLayout.PushBack("Input", 0.4f);
-        m_BeatLayout.PushBack("Calculation", 0.05f);
-        m_BeatLayout.PushBack("Execution", 0.5f);
-        m_BeatLayout.PushBack("Clean", 0.05f);
+        BeatLayout = new TimeLayout("BeatLayout");
+        BeatLayout.PushBack("Input", 0.4f);
+        BeatLayout.PushBack("Calculation", 0.05f);
+        BeatLayout.PushBack("Execution", 0.5f);
+        BeatLayout.PushBack("Clean", 0.05f);
     }
 
     public void StartPlay()
