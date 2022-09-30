@@ -6,16 +6,10 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    public Beat CurrentBeat { get; private set; }
-    public Beat PreviousBeat { get; private set; }
-
     public float InputDuration { get; private set; }
     public float CalculationDuration { get; private set; }
     public float ExecutionDuration { get; private set; }
     public float CleanDuration { get; private set; }
-
-    public float ActualDurationOfCurrentBeat { get { return (float)CurrentBeat.DurationInMilliseconds / (rythmController.PlaybackSpeed * 1000); } }
-    public float ActualDurationOfPreviousBeat { get { return (float)PreviousBeat.DurationInMilliseconds / (rythmController.PlaybackSpeed * 1000); } }
 
     public RythmController RythmController { get { return rythmController; } }
     public TrackManager TrackManager { get { return trackManager; } }
@@ -28,16 +22,6 @@ public class GameManager : MonoBehaviour
     private TurnController<BaseCharacter> m_TurnController;
     private RequestHandler<Movement> m_MovementHandler;
 
-    private Coroutine m_TurnCoroutine;
-
-    private void OnEnable()
-    {
-        rythmController.OnBeatPlayed += ProcessTurn;
-    }
-    private void OnDisable()
-    {
-        rythmController.OnBeatPlayed -= ProcessTurn;
-    }
     private void Awake()
     {
         if (Instance == null)
@@ -124,43 +108,77 @@ public class GameManager : MonoBehaviour
             m_MovementHandler.StackNewRequestAt(target, moveAction, moveValidCheck);
         }
     }
-    public void ProcessTurn(Beat current)
+    public void StartPlay()
+    {
+        rythmController.IsPlaying = true;
+        var track = trackManager.CurrentTrack;
+        track.Source.pitch = rythmController.playbackSpeed;
+        track.Source.loop = rythmController.isLooped;
+        StartCoroutine(PlaybackCoroutine());
+        StartCoroutine(PlayAudioCoroutine(trackManager.CurrentTrack.Source, rythmController.trackOffsetInSeconds));
+    }
+    public void StopPlay()
+    {
+        rythmController.IsPlaying = false;
+        StopAllCoroutines();
+        trackManager.CurrentTrack.Source.Stop();
+        trackManager.CurrentTrack.ResetIndex();
+    }
+    private IEnumerator PlaybackCoroutine()
     {
         var track = trackManager.CurrentTrack;
-        CurrentBeat = current;
-        PreviousBeat = track.GetBeat(CurrentBeat.Index - 1);
+        track.ResetIndex();
+        var startTime = Time.time;
+        var anchorTimeStamp = Time.time;
+        while (true)
+        {
+            float turnTime = Time.time;
+            if (track.CurrentBeat == track.PreviousBeat) 
+            {
+                if(rythmController.isLooped)
+                    track.ResetIndex();
+                else
+                {
+                    Debug.Log("Supposed End Time: " + (startTime + track.DurationInMilliSeconds));
+                    Debug.Log("Actual End Time: " + (Time.time - startTime));
+                    yield break;
+                }
+            }
+            float intervalInSeconds = (float)track.CurrentBeat.IntervalInMilliseconds / (rythmController.playbackSpeed * 1000);
+            anchorTimeStamp += intervalInSeconds;
+            yield return StartCoroutine(ProcessTurnCoroutine(anchorTimeStamp - Time.time));
+            track.IncrementBeatIndex();
 
-        if (m_TurnCoroutine != null)
-            StopCoroutine(m_TurnCoroutine);
-        m_TurnCoroutine = StartCoroutine(ProcessTurnCoroutine());
+            Debug.Log("Supposed Time Per Turn: " + intervalInSeconds);
+            Debug.Log("Actual Time Per Turn: " + (Time.time - turnTime));
+        }
+
+        
     }
-    private IEnumerator ProcessTurnCoroutine()
+    private IEnumerator ProcessTurnCoroutine(float timeInSeconds)
     {
-        var beatLayout = rythmController.BeatLayout;
+        var startTurnTime = Time.time;
 
-        InputDuration = beatLayout.GetDuration("Input", false) * ActualDurationOfCurrentBeat;
+        var beatLayout = rythmController.BeatLayout;
+        InputDuration = beatLayout.GetDuration("Input", true) * timeInSeconds;
         // Allow input until the end of the duration
+        playerController.ResetInput();
         playerController.CanControl = true;
-        playerController.StartInputEvaluation();
         yield return new WaitForSeconds(InputDuration);
-        playerController.StopInputEvaluation();
         playerController.CanControl = false;
 
-
-        CalculationDuration = beatLayout.GetDuration("Calculation", false) * ActualDurationOfCurrentBeat;
+        CalculationDuration = beatLayout.GetDuration("Calculation", true) * timeInSeconds;
         // Each turn will contain a list of <Player, Action> values. There are no duplicates
         // Each action here will be a request to the corresponding RequestHandler to make changes
         m_TurnController.ProcessTurn();
         yield return new WaitForSeconds(CalculationDuration);
 
-
-        ExecutionDuration = beatLayout.GetDuration("Execution", false) * ActualDurationOfCurrentBeat;
+        ExecutionDuration = beatLayout.GetDuration("Execution", true) * timeInSeconds;
         // Process requests after the request list has been populated in TurnController
         ProcessRequests<Movement>();
         yield return new WaitForSeconds(ExecutionDuration);
 
-
-        CleanDuration = beatLayout.GetDuration("Clean", false) * ActualDurationOfCurrentBeat;
+        CleanDuration = beatLayout.GetDuration("Clean", true) * timeInSeconds;
 #if DEBUG
         m_TurnController.DebugLog(TurnController<BaseCharacter>.DEBUG_INFO.CURRENT_TURN);
         Debug.Log(playerController.InputEvaluation);
@@ -168,11 +186,34 @@ public class GameManager : MonoBehaviour
         m_TurnController.ResetToDefaultActions();
         yield return new WaitForSeconds(CleanDuration);
     }
+    private IEnumerator PlayAudioCoroutine(AudioSource source, float delayInSeconds)
+    {
+        yield return new WaitForSeconds(delayInSeconds);
+        source.Play();
+    }
     private void ProcessRequests<T>() where T : Change
     {
         if (typeof(T) == typeof(Movement))
         {
             m_MovementHandler.ProcessRequests(true);
         }
+    }
+
+    private void OnGUI()
+    {
+        if (!rythmController.IsPlaying) { return; }
+        var track = trackManager.CurrentTrack;
+        if (track == null) { return; }
+        float timeStamp = (float)track.CurrentBeat.TimeStampInMilliseconds;
+        float normalizedTimeStamp = timeStamp / (float)track.DurationInMilliSeconds;
+        float x = normalizedTimeStamp * Screen.width;
+        float y = 0.9f * Screen.height;
+        float width = Screen.width / track.GetBeats().Length;
+        float height = 0.2f * Screen.height;
+        Rect rect = new Rect(x, y, width, height);
+        Debug.Log("NormalizedTimeStamp: " + normalizedTimeStamp);
+        Debug.Log("Rect position: " + rect.position.x + " " + rect.position.y);
+        Debug.Log("Rect size: " + rect.width + " " + rect.height);
+        GUI.DrawTexture(rect, Texture2D.whiteTexture);
     }
 }

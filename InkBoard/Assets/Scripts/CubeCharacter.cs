@@ -132,16 +132,21 @@ public class CubeCharacter : BaseCharacter
         private IEnumerator RollCoroutine()
         {
             var dir = Direction.GetDirection(m_To - m_From);
-            var axis = Vector3.Cross(Direction.Up, dir);
-            var anchor = ((Board.Instance.GetWorldPositionAt(m_From) + Board.Instance.GetWorldPositionAt(m_To)) / 2) + (Vector3)Direction.Down * 0.5f;
+            Vector3 axis = Vector3.Cross(Direction.Up, dir);
+            Vector3 anchor = ((Board.Instance.GetWorldPositionAt(m_From) + Board.Instance.GetWorldPositionAt(m_To)) / 2) + (Vector3)Direction.Down * 0.5f;
             float timer = 0;
-            var rollTime = m_Cube.NormalizedRollTime * GameManager.Instance.ExecutionDuration;
-            while (timer < rollTime)
+            float rollTime = m_Cube.NormalizedRollTime * GameManager.Instance.ExecutionDuration;
+
+            if(rollTime > Time.deltaTime)
             {
-                yield return null;
-                m_Cube.transform.RotateAround(anchor, axis, 90f * Time.deltaTime / (float)rollTime);
-                timer += Time.deltaTime;
+                while (timer < rollTime)
+                {
+                    yield return null;
+                    m_Cube.transform.RotateAround(anchor, axis, 90f * Time.deltaTime / (float)rollTime);
+                    timer += Time.deltaTime;
+                }
             }
+            
             m_Cube.SetGridPosition(m_To);
             m_Cube.SetPosition(Board.Instance.GetWorldPositionAt(m_To));
 

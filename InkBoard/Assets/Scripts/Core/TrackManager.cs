@@ -77,7 +77,7 @@ public class TrackManager : MonoBehaviour
         Debug.Log("******* DEBUG TRACK MANAGER********");
         Debug.Log("Number of tracks: " + m_Tracks.Count);
         foreach (var track in m_Tracks)
-            Debug.Log(track);
+            track.DebugLog();
     }
 #endif
 }
@@ -89,7 +89,6 @@ public class Track
         m_Name = trackName;
         m_Beats = new List<Beat>();
         m_BeatIndex = 0;
-        m_PlaybackTimeStampInMilliSeconds = 0;
         m_DurationInMilliSeconds = 0;
         m_AudioSource = source;
     }
@@ -112,8 +111,20 @@ public class Track
             var note = notesArray[i];
             var noteTime = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, tempoMap);
             var noteDuration = TimeConverter.ConvertTo<MetricTimeSpan>(note.Length, tempoMap);
-            var beat = new Beat(noteTime.TotalMilliseconds, noteDuration.TotalMilliseconds, i);
+            var beat = new Beat(noteTime.TotalMilliseconds, noteDuration.TotalMilliseconds, 0, i);
+            // No previous beat during first iteration to set interval
+            if(m_Beats.Count > 1)
+            {
+                var prevBeat = m_Beats[m_Beats.Count - 1];
+                prevBeat.IntervalInMilliseconds = beat.TimeStampInMilliseconds - prevBeat.TimeStampInMilliseconds;
+            }
             m_Beats.Add(beat);
+            // No next beat during last iteration to set interval
+            if (i == notesArray.Length - 1)
+            {
+                var lastBeat = m_Beats[m_Beats.Count - 1];
+                lastBeat.IntervalInMilliseconds = m_DurationInMilliSeconds - beat.TimeStampInMilliseconds;
+            }
         }
         return true;
     }
@@ -122,14 +133,13 @@ public class Track
         if(index < 0 || index >= m_Beats.Count) { return null; }
         return m_Beats[index];
     }
-    public void Reset()
+    public Beat[] GetBeats()
+    {
+        return m_Beats.ToArray();
+    }
+    public void ResetIndex()
     {
         m_BeatIndex = 0;
-        m_PlaybackTimeStampInMilliSeconds = 0;
-    }
-    public void SetCurrentTimeStamp(double time)
-    {
-        m_PlaybackTimeStampInMilliSeconds = time;
     }
     public void IncrementBeatIndex()
     {
@@ -144,8 +154,10 @@ public class Track
     {
         Debug.Log("******* DEBUG TRACK********");
         Debug.Log(this);
+        string message = "";
         foreach (var beat in m_Beats)
-            Debug.Log(beat);
+            message += beat.ToString() + '\n';
+        Debug.Log(message);
     }
 #endif
     public override string ToString()
@@ -154,13 +166,10 @@ public class Track
     }
     public string Name { get { return m_Name; } }
     public double DurationInMilliSeconds { get { return m_DurationInMilliSeconds; } }
-    public double PlaybackTimeStampInMilliSeconds { get { return m_PlaybackTimeStampInMilliSeconds; } }
     public Beat CurrentBeat { get { return m_BeatIndex > m_Beats.Count - 1 ? m_Beats[m_Beats.Count - 1] : m_Beats[m_BeatIndex]; } }
     public Beat PreviousBeat { get { return m_BeatIndex < 1 ? null : m_Beats[m_BeatIndex - 1]; } }
-    public bool IsFinished { get { return m_PlaybackTimeStampInMilliSeconds >= m_DurationInMilliSeconds; } }
     public AudioSource Source { get { return m_AudioSource; } }
 
-    private double m_PlaybackTimeStampInMilliSeconds;
     private List<Beat> m_Beats;
     private int m_BeatIndex;
     private string m_Name;
@@ -170,10 +179,11 @@ public class Track
 
 public class Beat
 {
-    public Beat(double timeStampInMilliSeconds, double durationInMilliSeconds, int index)
+    public Beat(double timeStampInMilliSeconds, double durationInMilliSeconds, double intervalInMilliSeconds, int index)
     {
-        m_TimeStampInMilliseconds = timeStampInMilliSeconds;
-        m_DurationInMilliseconds = durationInMilliSeconds;
+        TimeStampInMilliseconds = timeStampInMilliSeconds;
+        DurationInMilliseconds = durationInMilliSeconds;
+        IntervalInMilliseconds = intervalInMilliSeconds;
         m_Index = index;
     }
     ~Beat()
@@ -181,21 +191,21 @@ public class Beat
     }
     public override string ToString()
     {
-        var startTimeStamp = System.TimeSpan.FromMilliseconds(m_TimeStampInMilliseconds);
-        var duration = System.TimeSpan.FromMilliseconds(m_DurationInMilliseconds);
-        var endTimeStamp = System.TimeSpan.FromMilliseconds(m_TimeStampInMilliseconds + m_DurationInMilliseconds);
+        var startTimeStamp = System.TimeSpan.FromMilliseconds(TimeStampInMilliseconds);
+        var duration = System.TimeSpan.FromMilliseconds(DurationInMilliseconds);
+        var interval = System.TimeSpan.FromMilliseconds(IntervalInMilliseconds);
+        var endTimeStamp = System.TimeSpan.FromMilliseconds(TimeStampInMilliseconds + IntervalInMilliseconds);
 
         string startTimeStampString = string.Format("{0}:{1}:{2}", startTimeStamp.Minutes, startTimeStamp.Seconds, startTimeStamp.Milliseconds);
         string durationString = string.Format("{0}:{1}:{2}", duration.Minutes, duration.Seconds, duration.Milliseconds);
+        string intervalString = string.Format("{0}:{1}:{2}", interval.Minutes, interval.Seconds, interval.Milliseconds);
         string endTimeStampString = string.Format("{0}:{1}:{2}", endTimeStamp.Minutes, endTimeStamp.Seconds, endTimeStamp.Milliseconds);
 
-        return string.Format("Beat Index: {0}\nDuration: {1}\nTime Stamp: {2} -> {3}", m_Index, durationString, startTimeStampString, endTimeStampString);
+        return string.Format("Beat Index: {0}\nDuration: {1}\nInterval: {2}\nTime Stamp: {3} -> {4}", m_Index, durationString, intervalString, startTimeStampString, endTimeStampString);
     }
-    public double TimeStampInMilliseconds { get { return m_TimeStampInMilliseconds; } }
-    public double DurationInMilliseconds { get { return m_DurationInMilliseconds; } }
+    public double TimeStampInMilliseconds { get; set; }
+    public double DurationInMilliseconds { get; set; }
+    public double IntervalInMilliseconds { get; set; }
     public int Index { get { return m_Index; } }
-
-    private double m_TimeStampInMilliseconds;
-    private double m_DurationInMilliseconds;
     private int m_Index;
 }

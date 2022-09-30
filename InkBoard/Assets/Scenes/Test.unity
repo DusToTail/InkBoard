@@ -672,9 +672,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   trackManager: {fileID: 1600303466}
-  playbackSpeed: 0.5
+  playbackSpeed: 1
   isLooped: 0
-  normalizedDelay: 0
+  normalizedTrackOffset: 0
 --- !u!4 &1988914414
 Transform:
   m_ObjectHideFlags: 0

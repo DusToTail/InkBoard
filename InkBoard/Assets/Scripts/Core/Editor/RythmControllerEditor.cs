@@ -10,14 +10,6 @@ public class RythmControllerEditor : Editor
         base.OnInspectorGUI();
         EditorGUILayout.Separator();
         EditorGUILayout.LabelField("***Editor***");
-        if(GUILayout.Button("Play"))
-        {
-            controller.StartPlay();
-        }
-        if (GUILayout.Button("Stop"))
-        {
-            controller.StopPlay();
-        }
 #if DEBUG
         if (GUILayout.Button("DebugLog"))
         {

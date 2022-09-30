@@ -20,8 +20,6 @@ public static class TimeEvaluation
         }
         return result;
     }
-    
-
 }
 
 public class TimeLayout

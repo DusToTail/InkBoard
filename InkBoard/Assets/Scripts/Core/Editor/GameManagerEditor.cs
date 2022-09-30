@@ -14,5 +14,13 @@ public class GameManagerEditor : Editor
         {
             gameManager.Init();
         }
+        if(GUILayout.Button("Start"))
+        {
+            gameManager.StartPlay();
+        }
+        if (GUILayout.Button("Stop"))
+        {
+            gameManager.StopPlay();
+        }
     }
 }

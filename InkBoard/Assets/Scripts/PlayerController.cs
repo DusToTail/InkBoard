@@ -10,7 +10,8 @@ public class PlayerController : MonoBehaviour
     public TimeLayout InputLayout { get; private set; }
 
     [SerializeField] private BaseCharacter m_Character;
-    private Coroutine m_InputEvaluationCoroutine;
+    private float m_Timer = 0;
+    private float m_NormalizedTimer = 0;
 
     private void Start()
     {
@@ -21,59 +22,46 @@ public class PlayerController : MonoBehaviour
         InputLayout.PushBack("Perfect", 0.7f);
         InputLayout.PushBack("Late", 0.15f);
     }
+    private void Update()
+    {
+        if(m_Character == null || !CanControl) { return; }
+
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            m_Character.ExecuteCommand(KeyCode.A);
+            InputEvaluation = TimeEvaluation.Evaluate(InputLayout, m_NormalizedTimer, true);
+            CanControl = false;
+        }
+        else if (Input.GetKeyDown(KeyCode.D))
+        {
+            m_Character.ExecuteCommand(KeyCode.D);
+            InputEvaluation = TimeEvaluation.Evaluate(InputLayout, m_NormalizedTimer, true);
+            CanControl = false;
+        }
+        else if (Input.GetKeyDown(KeyCode.W))
+        {
+            m_Character.ExecuteCommand(KeyCode.W);
+            InputEvaluation = TimeEvaluation.Evaluate(InputLayout, m_NormalizedTimer, true);
+            CanControl = false;
+        }
+        else if (Input.GetKeyDown(KeyCode.S))
+        {
+            m_Character.ExecuteCommand(KeyCode.S);
+            InputEvaluation = TimeEvaluation.Evaluate(InputLayout, m_NormalizedTimer, true);
+            CanControl = false;
+        }
+        m_Timer += Time.deltaTime;
+        m_NormalizedTimer = m_Timer / GameManager.Instance.InputDuration;
+    }
     public void Init(BaseCharacter character)
     {
         m_Character = character;
     }
-    public void StartInputEvaluation()
+    public void ResetInput()
     {
-        if (m_InputEvaluationCoroutine != null)
-            StopCoroutine(m_InputEvaluationCoroutine);
-        m_InputEvaluationCoroutine = StartCoroutine(InputEvaluationCoroutine());
-    }
-    public void StopInputEvaluation()
-    {
-        if (m_InputEvaluationCoroutine != null)
-            StopCoroutine(m_InputEvaluationCoroutine);
-    }
-    private IEnumerator InputEvaluationCoroutine()
-    {
-        float timer = 0;
-        float normalizedTimer = 0;
-        while (timer <= GameManager.Instance.InputDuration)
-        {
-            yield return null;
-            if (CanControl)
-            {
-                InputEvaluation = "Missed";
-                if (Input.GetKeyDown(KeyCode.A))
-                {
-                    m_Character.ExecuteCommand(KeyCode.A);
-                    TimeEvaluation.Evaluate(InputLayout, normalizedTimer, true);
-                    CanControl = false;
-                }
-                else if (Input.GetKeyDown(KeyCode.D))
-                {
-                    m_Character.ExecuteCommand(KeyCode.D);
-                    TimeEvaluation.Evaluate(InputLayout, normalizedTimer, true);
-                    CanControl = false;
-                }
-                else if (Input.GetKeyDown(KeyCode.W))
-                {
-                    m_Character.ExecuteCommand(KeyCode.W);
-                    TimeEvaluation.Evaluate(InputLayout, normalizedTimer, true);
-                    CanControl = false;
-                }
-                else if (Input.GetKeyDown(KeyCode.S))
-                {
-                    m_Character.ExecuteCommand(KeyCode.S);
-                    TimeEvaluation.Evaluate(InputLayout, normalizedTimer, true);
-                    CanControl = false;
-                }
-            }
-            timer += Time.deltaTime;
-            normalizedTimer = timer / GameManager.Instance.InputDuration;
-        }
+        InputEvaluation = "Missed";
+        m_Timer = 0;
+        m_NormalizedTimer = 0;
     }
 }
 
