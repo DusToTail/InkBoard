@@ -10,6 +10,7 @@ public class CubeCharacter : BaseCharacter
 
     private Vector3Int[] m_Orientation;
     private CubeMovement m_Movement;
+    private CubeKnockBack m_KnockBack;
     private CubeData m_CubeData;
 
     public override void Init(object data)
@@ -28,6 +29,7 @@ public class CubeCharacter : BaseCharacter
         m_Orientation = new Vector3Int[3];
         SetOrientation(m_CubeData.Right, m_CubeData.Up, m_CubeData.Front);
         m_Movement = new CubeMovement(this);
+        m_KnockBack = new CubeKnockBack(this);
     }
     public override void SetInputCommand()
     {
@@ -81,6 +83,9 @@ public class CubeCharacter : BaseCharacter
     {
         //Debug.Log("CubeCharacter: SendMoveRequest");
         GameManager.Instance.Request(m_Movement);
+        var dir = m_Movement.To - m_Movement.From;
+        m_KnockBack.SetProperties(gridPosition, gridPosition - dir, false);
+        GameManager.Instance.StackNewRequestAt(m_Movement, m_KnockBack);
         return true;
     }
     public void SetOrientation(Vector3Int right, Vector3Int up, Vector3Int forward)
@@ -122,6 +127,9 @@ public class CubeCharacter : BaseCharacter
         public override bool IsValid()
         {
             // Need to refer to other characters, the board, etc
+            var board = Board.Instance;
+            if (board.HasValueAt(new GridPosition(m_To)) || !board.HasValueAt(new GridPosition(m_To + (Vector3Int)Direction.Down)))
+                return false;
             return true;
         }
         public void SetProperties(Vector3Int from, Vector3Int to)
@@ -163,6 +171,102 @@ public class CubeCharacter : BaseCharacter
 
         private Vector3Int m_From;
         private Vector3Int m_To;
+        private Coroutine m_Coroutine;
+        private CubeCharacter m_Cube;
+    }
+    public class CubeKnockBack : Movement
+    {
+        public CubeKnockBack(CubeCharacter cube)
+        {
+            m_Cube = cube;
+            m_From = Vector3Int.zero;
+            m_To = Vector3Int.zero;
+        }
+        public CubeKnockBack(CubeCharacter cube, Vector3Int from, Vector3Int to)
+        {
+            m_Cube = cube;
+            m_From = from;
+            m_To = to;
+        }
+        ~CubeKnockBack()
+        {
+        }
+        public override bool Execute()
+        {
+            if (m_Coroutine != null) { m_Cube.StopCoroutine(m_Coroutine); }
+            m_Coroutine = m_Cube.StartCoroutine(KnockBackCoroutine());
+            return true;
+        }
+        public override bool IsValid()
+        {
+            var board = Board.Instance;
+            if (board.HasValueAt(new GridPosition(m_To)) || !board.HasValueAt(new GridPosition(m_To + (Vector3Int)Direction.Down)))
+                return false;
+            return true;
+        }
+        public void SetProperties(Vector3Int from, Vector3Int to, bool changePosition)
+        {
+            m_From = from;
+            m_To = to;
+            m_ChangePosition = changePosition;
+        }
+        private IEnumerator KnockBackCoroutine()
+        {
+            var dir = Direction.GetDirection(m_To - m_From);
+            Vector3 axis = Vector3.Cross(Direction.Up, dir);
+            Vector3 anchor = ((Board.Instance.GetWorldPositionAt(m_From) + Board.Instance.GetWorldPositionAt(m_To)) / 2) + (Vector3)Direction.Down * 0.5f;
+            float timer = 0;
+            float knockBackTime = m_Cube.NormalizedRollTime * GameManager.Instance.ExecutionDuration;
+            
+
+            if(m_ChangePosition)
+            {
+                if (knockBackTime > Time.deltaTime)
+                {
+                    while (timer < knockBackTime)
+                    {
+                        yield return null;
+                        m_Cube.transform.RotateAround(anchor, axis, 90f * Time.deltaTime / (float)knockBackTime);
+                        timer += Time.deltaTime;
+                    }
+                }
+
+                m_Cube.SetGridPosition(m_To);
+                m_Cube.SetPosition(Board.Instance.GetWorldPositionAt(m_To));
+
+                Quaternion rotation = Quaternion.AngleAxis(90f, axis);
+                Vector3Int right = Vector3Int.RoundToInt(rotation * m_Cube.m_Orientation[0]);
+                Vector3Int up = Vector3Int.RoundToInt(rotation * m_Cube.m_Orientation[1]);
+                Vector3Int forward = Vector3Int.RoundToInt(rotation * m_Cube.m_Orientation[2]);
+                m_Cube.SetRotation(forward, up);
+                m_Cube.SetOrientation(right, up, forward);
+            }
+            else
+            {
+                if (knockBackTime > Time.deltaTime)
+                {
+                    while (timer < knockBackTime)
+                    {
+                        yield return null;
+                        float normalizedTimer = timer / knockBackTime;
+                        m_Cube.transform.RotateAround(anchor, axis, (0.5f - normalizedTimer) * 180f * Time.deltaTime / (float)knockBackTime);
+                        timer += Time.deltaTime;
+                    }
+                }
+
+                m_Cube.SetGridPosition(m_From);
+                m_Cube.SetPosition(Board.Instance.GetWorldPositionAt(m_From));
+
+                Vector3Int right = m_Cube.m_Orientation[0];
+                Vector3Int up = m_Cube.m_Orientation[1];
+                Vector3Int forward = m_Cube.m_Orientation[2];
+                m_Cube.SetRotation(forward, up);
+                m_Cube.SetOrientation(right, up, forward);
+            }
+        }
+        private Vector3Int m_From;
+        private Vector3Int m_To;
+        private bool m_ChangePosition;
         private Coroutine m_Coroutine;
         private CubeCharacter m_Cube;
     }

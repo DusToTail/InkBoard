@@ -43,20 +43,21 @@ public class MyGrid<T> where T : class
     public T GetValueAt(GridPosition position)
     {
         bool valid = IsValidPosition(position, m_Layout);
-        if (!valid) { Debug.LogError($"Grid position {position.ToString()} is not valid in layout {m_Layout.ToString()}"); return null; }
-        uint index = position.z * (m_Layout.xCount * m_Layout.yCount) + position.y * m_Layout.xCount + position.x;
+        if (!valid) { Debug.LogWarning($"Grid position {position.ToString()} is not valid in layout {m_Layout.ToString()}"); return null; }
+        uint index = (uint)(position.z * (m_Layout.xCount * m_Layout.yCount) + position.y * m_Layout.xCount + position.x);
         return m_Array[index].Value;
     }
     public void SetValueAt(GridPosition position, T value)
     {
         bool valid = IsValidPosition(position, m_Layout);
-        if (!valid) { Debug.LogError($"Grid position {position.ToString()} is not valid in layout {m_Layout.ToString()}"); return; }
-        uint index = position.z * (m_Layout.xCount * m_Layout.yCount) + position.y * m_Layout.xCount + position.x;
+        if (!valid) { Debug.LogWarning($"Grid position {position.ToString()} is not valid in layout {m_Layout.ToString()}"); return; }
+        uint index = (uint)(position.z * (m_Layout.xCount * m_Layout.yCount) + position.y * m_Layout.xCount + position.x);
         m_Array[index].SetValue(value);
     }
     public static bool IsValidPosition(GridPosition position, GridLayout layout)
     {
-        bool valid = position.x < layout.xCount && position.y < layout.yCount && position.z < layout.zCount;
+        bool valid =    position.x < layout.xCount && position.y < layout.yCount && position.z < layout.zCount && 
+                        position.x > -1 && position.y > -1 && position.z > -1;
         return valid;
     }
     protected GridLayout m_Layout;
@@ -141,11 +142,23 @@ public struct GridPosition
 {
     public GridPosition(uint x, uint y, uint z)
     {
+        this.x = (int)x;
+        this.y = (int)y;
+        this.z = (int)z;
+    }
+    public GridPosition(int x, int y, int z)
+    {
         this.x = x;
         this.y = y;
         this.z = z;
     }
     public GridPosition(uint x, uint y)
+    {
+        this.x = (int)x;
+        this.y = (int)y;
+        this.z = 0;
+    }
+    public GridPosition(int x, int y)
     {
         this.x = x;
         this.y = y;
@@ -153,14 +166,14 @@ public struct GridPosition
     }
     public GridPosition(Vector3Int vec3)
     {
-        this.x = vec3.x < 0 ? 0 : (uint)vec3.x;
-        this.y = vec3.y < 0 ? 0 : (uint)vec3.y;
-        this.z = vec3.z < 0 ? 0 : (uint)vec3.z;
+        this.x = vec3.x;
+        this.y = vec3.y;
+        this.z = vec3.z;
     }
     public GridPosition(Vector2Int vec2)
     {
-        this.x = vec2.x < 0 ? 0 : (uint)vec2.x;
-        this.y = vec2.y < 0 ? 0 : (uint)vec2.y;
+        this.x = vec2.x;
+        this.y = vec2.y;
         this.z = 0;
     }
     public static implicit operator Vector3Int(GridPosition pos) { return new Vector3Int((int)pos.x, (int)pos.y, (int)pos.z); }
@@ -171,7 +184,7 @@ public struct GridPosition
     {
         return string.Format("{0} {1} {2}", x,y,z);
     }
-    public uint x;
-    public uint y;
-    public uint z;
+    public int x;
+    public int y;
+    public int z;
 }

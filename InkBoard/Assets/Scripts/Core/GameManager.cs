@@ -40,8 +40,8 @@ public class GameManager : MonoBehaviour
 ""width"": 3,
 ""length"": 3,
 ""height"": 2, 
-""blockIDs"": [  0,  0,  0, -1, -1, -1,  0,  0,  0, 
-                -1, -1, -1,  0,  0,  0, -1, -1, -1  ]
+""blockIDs"": [  0,  0,  0, -1,  0,  0,  0,  0,  0, 
+                -1, -1, -1,  0,  0,  0,  0, -1,  0  ]
 }";
         Board.Instance.Init(boardData);
 
@@ -98,14 +98,22 @@ public class GameManager : MonoBehaviour
                 });
         }
     }
-    public void StackNewRequestAt<T>(T targetMovement, Func<T, bool> action, Func<T, bool> validCheck) where T : Change
+    public void StackNewRequestAt<T,U>(T targetChange, U stackChange) where T : Change where U : Change
     {
-        if (typeof(T).IsSubclassOf(typeof(Movement)))
+        if (typeof(T).IsSubclassOf(typeof(Movement)) && typeof(U).IsSubclassOf(typeof(Movement)))
         {
-            var target = targetMovement as Movement;
-            var moveAction = action as Func<Movement, bool>;
-            var moveValidCheck = validCheck as Func<Movement, bool>;
-            m_MovementHandler.StackNewRequestAt(target, moveAction, moveValidCheck);
+            var target = targetChange as Movement;
+            var stack = stackChange as Movement;
+            m_MovementHandler.StackNewRequestAt(
+                target,
+                (x) =>
+                {
+                    return stack.Execute();
+                },
+                (x) =>
+                {
+                    return stack.IsValid();
+                });
         }
     }
     public void StartPlay()
@@ -211,9 +219,6 @@ public class GameManager : MonoBehaviour
         float width = Screen.width / track.GetBeats().Length;
         float height = 0.2f * Screen.height;
         Rect rect = new Rect(x, y, width, height);
-        Debug.Log("NormalizedTimeStamp: " + normalizedTimeStamp);
-        Debug.Log("Rect position: " + rect.position.x + " " + rect.position.y);
-        Debug.Log("Rect size: " + rect.width + " " + rect.height);
         GUI.DrawTexture(rect, Texture2D.whiteTexture);
     }
 }
