@@ -34,15 +34,47 @@ public class GameManager : MonoBehaviour
         m_TurnController = new TurnController<BaseCharacter>((x) => { return x.DefaultAction(); });
         m_MovementHandler = new RequestHandler<Movement>();
 
+        string block1 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [0, 0, 0], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string block2 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [1, 0, 0], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string block3 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [2, 0, 0], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string block4 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [1, 1, 0], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string block5 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [0, 0, 1], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string block6 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [1, 0, 1], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string block7 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [2, 0, 1], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string block8 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [0, 0, 2], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string block9 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [1, 0, 2], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string block10 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [2, 0, 2], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+        string block11 = @"{""actualType"": ""Block.BlockData"", ""id"": 0, ""gridPosition"": [2, 1, 2], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
+
+
+
+        string noBlockData = @"{""actualType"": ""Block.BlockData"", ""id"": -1, ""gridPosition"": [-1, -1, -1], ""front_up_right"": [""None"", ""None"", ""None""]}";
         string boardData = @"
 {
 ""betweenDistance"": 1,
 ""width"": 3,
 ""length"": 3,
 ""height"": 2, 
-""blockIDs"": [  0,  0,  0, -1,  0,  0,  0,  0,  0, 
-                -1, -1, -1,  0,  0,  0,  0, -1,  0  ]
-}";
+""blockDatas"": [
+" + block1 + @",
+" + block2 + @",
+" + block3 + @",
+" + noBlockData + @",
+" + block4 + @",
+" + noBlockData + @",
+" + block5 + @",
+" + block6 + @",
+" + block7 + @",
+" + noBlockData + @",
+" + noBlockData + @",
+" + noBlockData + @",
+" + block8 + @",
+" + block9 + @",
+" + block10 + @",
+" + noBlockData + @",
+" + noBlockData + @",
+" + block11 + @"
+]}";
         Board.Instance.Init(boardData);
 
         string cubeData = @"{""actualType"": ""CubeCharacter.CubeData"", ""id"": 0, ""gridPosition"": [0, 1, 0], ""front_up_right"": [""Front"", ""Up"", ""Right""]}";
@@ -147,8 +179,8 @@ public class GameManager : MonoBehaviour
                     track.ResetIndex();
                 else
                 {
-                    Debug.Log("Supposed End Time: " + (startTime + track.DurationInMilliSeconds));
-                    Debug.Log("Actual End Time: " + (Time.time - startTime));
+                    //Debug.Log("Supposed End Time: " + (startTime + track.DurationInMilliSeconds));
+                    //Debug.Log("Actual End Time: " + (Time.time - startTime));
                     yield break;
                 }
             }
@@ -157,8 +189,8 @@ public class GameManager : MonoBehaviour
             yield return StartCoroutine(ProcessTurnCoroutine(anchorTimeStamp - Time.time));
             track.IncrementBeatIndex();
 
-            Debug.Log("Supposed Time Per Turn: " + intervalInSeconds);
-            Debug.Log("Actual Time Per Turn: " + (Time.time - turnTime));
+            //Debug.Log("Supposed Time Per Turn: " + intervalInSeconds);
+            //Debug.Log("Actual Time Per Turn: " + (Time.time - turnTime));
         }
 
         
