@@ -72,6 +72,7 @@ public class BaseCharacter : MonoBehaviour
         //Debug.Log("BaseCharacter: SendMoveRequest");
         return true;
     }
+    public virtual BaseCharacterData GetData() { return m_BaseData; }
     protected void SetGridPosition(Vector3Int gridPosition)
     {
         this.gridPosition = gridPosition;

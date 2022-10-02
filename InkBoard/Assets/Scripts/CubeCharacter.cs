@@ -88,6 +88,7 @@ public class CubeCharacter : BaseCharacter
         GameManager.Instance.StackNewRequestAt(m_Movement, m_KnockBack);
         return true;
     }
+    public override BaseCharacterData GetData() { return m_CubeData; }
     public void SetOrientation(Vector3Int right, Vector3Int up, Vector3Int forward)
     {
         m_Orientation[0] = right;

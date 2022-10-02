@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using BaseData = BaseCharacter.BaseCharacterData;
-public class CharacterManager : MonoBehaviour
+public class CharacterManager : MonoBehaviour, ISimulate<GameState>
 {
     public static CharacterManager Instance { get; private set; }
 
@@ -89,6 +89,17 @@ public class CharacterManager : MonoBehaviour
     {
         return m_Grid.GetValueAt(new GridPosition(gridPosition));
     }
+    public void Simulate(GameState refSim)
+    {
+        refSim.characterDatas = new MyGrid<BaseData>(m_Grid.Layout);
+        m_Grid.ForEach(x =>
+        {
+            if(x.Value != null)
+            {
+                refSim.characterDatas.SetValueAt(x.GetGridPosition(), x.Value.GetData());
+            }
+        });
+    }
     private void CreateCharacterAtCell(Cell<BaseCharacter> cell)
     {
         //Debug.Log("Character at " + cell.GridPosition);
@@ -130,4 +141,6 @@ public class CharacterManager : MonoBehaviour
         if (id == -1) { return null; }
         return System.Array.Find(prefabs, x => x.GetComponent<BaseCharacter>().ID == id);
     }
+
+    
 }
