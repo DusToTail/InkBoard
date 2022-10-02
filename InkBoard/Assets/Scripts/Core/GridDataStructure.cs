@@ -60,6 +60,7 @@ public class MyGrid<T> where T : class
                         position.x > -1 && position.y > -1 && position.z > -1;
         return valid;
     }
+    public GridLayout Layout { get { return m_Layout; } }
     protected GridLayout m_Layout;
     protected Cell<T>[] m_Array;
 
