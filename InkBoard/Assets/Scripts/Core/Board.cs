@@ -1,6 +1,8 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
-public class Board : MonoBehaviour
+public class Board : MonoBehaviour, ISimulate<GameState>
 {
     public static Board Instance { get; private set; }
 
@@ -28,7 +30,8 @@ public class Board : MonoBehaviour
     public void Init(string data)
     {
         if(!string.IsNullOrEmpty(data))
-            DeserializeData(data); 
+            DeserializeData(data);
+        gridLayout = new Vector3Int((int)m_Data.width, (int)m_Data.height, (int)m_Data.length);
         m_Layout = new GridLayout((uint)gridLayout.x, (uint)gridLayout.y, (uint)gridLayout.z);
         m_Grid = new MyGrid<Block>(m_Layout);
         m_BlockInitIndex = -1;
@@ -61,32 +64,62 @@ public class Board : MonoBehaviour
         var block = m_Grid.GetValueAt(gridPosition);
         return block == null ? false : true;
     }
+    public void Simulate(GameState refSim)
+    {
+        refSim.blockDatas = new MyGrid<Block.BlockData>(m_Grid.Layout);
+        m_Grid.ForEach(x =>
+        {
+            if (x.Value != null)
+            {
+                refSim.blockDatas.SetValueAt(x.GetGridPosition(), x.Value.GetData());
+            }
+        });
+    }
     public string SerializeData()
     {
-        return JsonUtility.ToJson(m_Data);
+        List<string> blocks = new List<string>();
+        for (int i = 0; i < Layout.GetTotalCount(); i++)
+        {
+            var data = m_Data.blockDatas[i];
+            Type type = data.GetType();
+            data.actualType = type.FullName;
+            if (type == typeof(Block.BlockData))
+            {
+                string dataString = JsonUtility.ToJson(data);
+                blocks.Add(dataString);
+            }
+        }
+        string blocksString = string.Join(",\n", blocks.ToArray());
+        string boardData = @"
+{
+""betweenDistance"": " + betweenDistance + @",
+""width"": " + Layout.xCount + @",
+""length"": " + Layout.zCount + @",
+""height"": " + Layout.yCount + @", 
+""blockDatas"": [" + blocksString + @"]
+}";
+        return boardData;
     }
     public void DeserializeData(string content)
     {
         m_Data = JsonUtility.FromJson<BoardData>(content);
-        betweenDistance = m_Data.betweenDistance;
-        gridLayout = new Vector3Int((int)m_Data.width, (int)m_Data.height, (int)m_Data.length);
     }
     private void CreateBlockAtCell(Cell<Block> cell)
     {
-        Vector3Int gridPosition = cell.GridPosition;
-        Vector3 localPosition = (Vector3)gridPosition * betweenDistance;
+        //Debug.Log("Block at " + cell.GridPosition);
         m_BlockInitIndex++;
-        var prefab = GetBlockFromID(m_Data == null ? 0 : m_Data.blockIDs[m_BlockInitIndex]);
+        var data = m_Data.blockDatas[m_BlockInitIndex];
+        if (data == null) { Debug.LogError("Data is null!"); return; }
+
+        var prefab = GetBlockFromID(data.id);
         if (prefab == null) 
         { 
             //Debug.Log($"Board: {cell} Empty"); 
             return; 
         }
-
-        Vector3 worldPosition = transform.position + localPosition;
-        var blockObj = Instantiate(prefab, worldPosition, Quaternion.identity, transform);
-        var block = blockObj.GetComponent<Block>();
-        block.Init();
+        var characterObj = Instantiate(prefab, transform);
+        var block = characterObj.GetComponent<Block>();
+        block.Init(data);
         cell.SetValue(block);
 
         //Debug.Log($"Board: {cell} {block.ID}");
@@ -120,7 +153,7 @@ public class Board : MonoBehaviour
         public uint width;
         public uint length;
         public uint height;
-        public int[] blockIDs;
+        public Block.BlockData[] blockDatas;
 
         public BoardData(float dis, GridLayout layout)
         {
@@ -128,12 +161,18 @@ public class Board : MonoBehaviour
             width = layout.xCount;
             length = layout.yCount;
             height = layout.zCount;
-            blockIDs = new int[layout.GetTotalCount()];
+            blockDatas = new Block.BlockData[layout.GetTotalCount()];
         }
 
-        public void SetBlockIDs(int[] srcArray)
+        public void SetBlockIDs(Block.BlockData[] srcArray)
         {
-            System.Array.Copy(srcArray, blockIDs, srcArray.Length);
+            blockDatas = new Block.BlockData[srcArray.Length];
+            for (int i = 0; i < srcArray.Length; i++)
+            {
+                var srcData = srcArray[i];
+                Block.BlockData data = new Block.BlockData(srcData.id, srcData.GridPosition, srcData.front_up_right);
+                blockDatas[i] = data;
+            }
         }
 
         public void LoadFrom(object data)
@@ -143,7 +182,7 @@ public class Board : MonoBehaviour
             width = boardData.width;
             length = boardData.length;
             height = boardData.height;
-            SetBlockIDs(boardData.blockIDs);
+            SetBlockIDs(boardData.blockDatas);
         }
 
         public void SaveTo(object data)
@@ -153,7 +192,7 @@ public class Board : MonoBehaviour
             boardData.width = width;
             boardData.length = length;
             boardData.height = height;
-            boardData.SetBlockIDs(blockIDs);
+            boardData.SetBlockIDs(blockDatas);
         }
 
     }
